@@ -1,0 +1,38 @@
+# Dependencias
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# EAS
+.eas/
+
+# Sistema operativo
+.DS_Store
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# Local env
+.env
+.env.local
+.env.*.local
+
+# Credenciales (NUNCA subir al repo)
+google-service-account.json
+*.p12
+*.mobileprovision
+
+# Android
+android/
+*.keystore
+
+# iOS
+ios/
+*.ipa
+
+# TypeScript
+*.tsbuildinfo
