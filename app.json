@@ -1,9 +1,10 @@
 {
   "expo": {
     "name": "WC Corporate",
-    "slug": "wc-corporate-app",
+    "slug": "wccorporate-app",
     "version": "1.0.0",
     "orientation": "portrait",
+    "owner": "wc-corporate-editor-1",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -23,56 +24,4 @@
         "NSCameraUsageDescription": "Usar la cámara para insertar fotos en tus documentos.",
         "NSPhotoLibraryUsageDescription": "Acceder a la galería para insertar imágenes en documentos.",
         "NSPhotoLibraryAddUsageDescription": "Guardar documentos exportados en tu galería.",
-        "NSMicrophoneUsageDescription": "Usar el micrófono para dictado de texto.",
-        "NSFaceIDUsageDescription": "Autenticarte rápidamente con Face ID."
-      }
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#1a2942"
-      },
-      "package": "com.wccorporate.editor",
-      "versionCode": 1,
-      "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "READ_MEDIA_IMAGES",
-        "READ_MEDIA_VIDEO",
-        "INTERNET",
-        "ACCESS_NETWORK_STATE",
-        "VIBRATE",
-        "RECEIVE_BOOT_COMPLETED",
-        "POST_NOTIFICATIONS"
-      ]
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      "expo-splash-screen",
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "WC Corporate necesita acceso a tus fotos para insertar imágenes en documentos.",
-          "cameraPermission": "WC Corporate necesita acceso a la cámara para tomar fotos e insertarlas en documentos."
-        }
-      ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/icon.png",
-          "color": "#0084ff",
-          "sounds": []
-        }
-      ],
-      "expo-document-picker"
-    ],
-    "notification": {
-      "icon": "./assets/icon.png",
-      "color": "#0084ff",
-      "androidMode": "default"
-    }
-  }
-}
+        "NSMicrophoneUsageDescription": "
