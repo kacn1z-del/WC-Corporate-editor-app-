@@ -10,6 +10,7 @@ import { WebView } from 'react-native-webview';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as Notifications from 'expo-notifications';
@@ -115,6 +116,26 @@ export default function App() {
         }
       }
 
+      if (data.type === 'PICK_FILE') {
+        const result = await DocumentPicker.getDocumentAsync({
+          type: '*/*',
+          copyToCacheDirectory: true,
+        });
+        if (!result.canceled && result.assets[0]) {
+          const asset = result.assets[0];
+          const content = await FileSystem.readAsStringAsync(asset.uri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          webViewRef.current?.injectJavaScript(`
+            window.wcNative.onFilePicked({
+              name: '${asset.name}',
+              mimeType: '${asset.mimeType || 'application/octet-stream'}',
+              content: '${content}'
+            });
+          `);
+        }
+      }
+
       if (data.type === 'SAVE_FILE') {
         const fileUri = FileSystem.documentDirectory + (data.filename || 'documento.txt');
         await FileSystem.writeAsStringAsync(fileUri, data.content, {
@@ -147,10 +168,12 @@ export default function App() {
     window.wcNative = {
       pickImage: () => window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'PICK_IMAGE' })),
       takePhoto: () => window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'TAKE_PHOTO' })),
+      pickFile: () => window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'PICK_FILE' })),
       saveFile: (filename, content, encoding) => window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SAVE_FILE', filename, content, encoding })),
       cacheData: (payload) => window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'CACHE_DATA', payload })),
       getCache: () => window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'GET_CACHE' })),
       onImagePicked: () => {},
+      onFilePicked: () => {},
       onCacheLoaded: () => {},
       isNative: true,
       platform: 'android',
