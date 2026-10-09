@@ -3,6 +3,9 @@ name: EAS Build Android
 on:
   workflow_dispatch:
 
+env:
+  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
 jobs:
   build:
     name: Build APK Preview
@@ -24,5 +27,3 @@ jobs:
 
       - name: Build APK
         run: eas build --platform android --profile preview --non-interactive
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
