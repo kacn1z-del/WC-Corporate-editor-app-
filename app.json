@@ -6,22 +6,27 @@
     "orientation": "portrait",
     "owner": "wc-corporate-editor-1",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#1a2942"
     },
-    "updates": {
-      "fallbackToCacheTimeout": 0
-    },
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.wccorporate.editor",
-      "buildNumber": "1",
-      "infoPlist": {
-        "NSCameraUsageDescription": "Usar la cámara para insertar fotos en tus documentos.",
-        "NSPhotoLibraryUsageDescription": "Acceder a la galería para insertar imágenes en documentos.",
-        "NSPhotoLibraryAddUsageDescription": "Guardar documentos exportados en tu galería.",
-        "NSMicrophoneUsageDescription": "
+      "bundleIdentifier": "com.wccorporate.editor"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1a2942"
+      },
+      "package": "com.wccorporate.editor"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "46880130-99bf-48b4-95b9-b9f329cf35a0"
+      }
+    }
+  }
+}
