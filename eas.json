@@ -7,7 +7,7 @@
     "preview": {
       "android": {
         "buildType": "apk",
-        "image": "ubuntu-22.04-jdk-11-ndk-r21e"
+        "image": "ubuntu-22.04-jdk-17-ndk-r21e"
       }
     },
     "production": {
@@ -17,4 +17,3 @@
     }
   }
 }
-
