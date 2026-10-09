@@ -21,7 +21,7 @@ import * as Sharing from 'expo-sharing';
 import * as Device from 'expo-device';
 import * as Network from 'expo-network';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { WC_EDITOR_HTML } from './editorHtml';
+import { Asset } from 'expo-asset';
 
 // ─── Configuración global de notificaciones ───────────────────────────────
 Notifications.setNotificationHandler({
@@ -106,20 +106,30 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [canGoBack, setCanGoBack] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
-  const [source, setSource] = useState<any>({ html: WC_EDITOR_HTML, baseUrl: 'https://kacn1z-del.github.io/wc-editorpro/' });
+  const [source, setSource] = useState<any>(null);
   const appState = useRef(AppState.currentState);
 
   // ── Al arrancar ──
   useEffect(() => {
     (async () => {
-      // 1. Verificar conexión
+      // Verificar conexión (solo para saber si Sibö/IA está disponible)
       const net = await Network.getNetworkStateAsync();
       const online = !!net.isConnected && !!net.isInternetReachable;
       setIsOnline(online);
 
-      // El editor SIEMPRE carga desde el HTML local (dentro de la app).
-      // No necesita internet para abrir. Internet solo se usa para Sibö (IA).
-      setSource({ html: WC_EDITOR_HTML, baseUrl: 'https://kacn1z-del.github.io/wc-editorpro/' });
+      // Cargar el editor desde el HTML local empaquetado en assets.
+      // Siempre funciona, sin internet, al instante.
+      try {
+        const asset = Asset.fromModule(require('./assets/editor.html'));
+        await asset.downloadAsync();
+        const localUri = asset.localUri || asset.uri;
+        const htmlContent = await FileSystem.readAsStringAsync(localUri);
+        setSource({ html: htmlContent, baseUrl: 'https://kacn1z-del.github.io/wc-editorpro/' });
+      } catch (e) {
+        console.log('Error cargando editor local:', e);
+        // Fallback: si algo falla, cargar desde internet
+        setSource({ uri: WC_URL });
+      }
 
       // 4. Notificaciones push
       await registerForPushNotifications();
@@ -390,6 +400,7 @@ export default function App() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1a2942" translucent={false} />
 
+      {source && (
       <WebView
         ref={webViewRef}
         source={source}
@@ -405,7 +416,7 @@ export default function App() {
         allowFileAccessFromFileURLs={true}
         allowUniversalAccessFromFileURLs={true}
         cacheEnabled={true}
-        cacheMode="LOAD_CACHE_ELSE_NETWORK"
+        cacheMode="LOAD_DEFAULT"
         renderToHardwareTextureAndroid={true}
         injectedJavaScriptBeforeContentLoaded={injectedJS}
         onLoadEnd={handleLoadEnd}
@@ -413,8 +424,9 @@ export default function App() {
         onNavigationStateChange={(s) => setCanGoBack(s.canGoBack)}
         onError={(e) => console.warn('WebView error:', e.nativeEvent)}
       />
+      )}
 
-      {loading && (
+      {(loading || !source) && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#0084ff" />
         </View>
