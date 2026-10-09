@@ -5,33 +5,26 @@
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
-    "ios": "expo run:ios",
-    "build:android": "eas build --platform android",
-    "build:ios": "eas build --platform ios",
-    "build:all": "eas build --platform all"
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "expo": "~51.0.0",
     "expo-status-bar": "~1.12.1",
     "expo-splash-screen": "~0.27.5",
     "expo-image-picker": "~15.0.7",
-    "expo-document-picker": "~12.0.2",
-    "expo-notifications": "~0.28.19",
+    "expo-document-picker": "~11.10.1",
+    "expo-notifications": "~0.28.9",
     "expo-file-system": "~17.0.1",
-    "expo-device": "~6.0.2",
     "expo-sharing": "~12.0.1",
-    "expo-media-library": "~16.0.5",
+    "expo-device": "~6.0.2",
     "expo-network": "~6.0.1",
-    "expo-keep-awake": "~13.0.2",
+    "@react-native-async-storage/async-storage": "1.23.1",
     "react": "18.2.0",
     "react-native": "0.74.5",
-    "react-native-webview": "13.10.5",
-    "@react-native-async-storage/async-storage": "1.23.1",
-    "@react-native-community/netinfo": "11.3.2"
+    "react-native-webview": "13.10.5"
   },
   "devDependencies": {
-    "@babel/core": "^7.24.0",
-    "@types/react": "~18.2.79"
+    "@babel/core": "^7.24.0"
   },
   "private": true
 }
