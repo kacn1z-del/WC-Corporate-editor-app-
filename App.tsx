@@ -1,70 +1,187 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   View,
-  ActivityIndicator,
-  StatusBar,
-  SafeAreaView,
   BackHandler,
   Platform,
+  Alert,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import * as Network from 'expo-network';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 SplashScreen.preventAutoHideAsync();
 
-const WC_URL = 'https://kacn1z-del.github.io/wc-editorpro/';
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
+
+const WEB_URL = 'https://kacn1z-del.github.io/wc-editorpro/';
+const CACHE_KEY = 'wc_offline_cache';
 
 export default function App() {
-  const webViewRef = useRef(null);
-  const [loading, setLoading] = useState(true);
-  const [canGoBack, setCanGoBack] = useState(false);
+  const webViewRef = useRef<WebView>(null);
+  const [isOffline, setIsOffline] = useState(false);
+  const [appIsReady, setAppIsReady] = useState(false);
 
-  React.useEffect(() => {
-    if (Platform.OS !== 'android') return;
-    const onBack = () => {
-      if (canGoBack && webViewRef.current) {
-        webViewRef.current.goBack();
-        return true;
+  useEffect(() => {
+    async function prepare() {
+      try {
+        await registerForPushNotifications();
+        const networkState = await Network.getNetworkStateAsync();
+        setIsOffline(!networkState.isConnected);
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setAppIsReady(true);
       }
-      return false;
-    };
-    BackHandler.addEventListener('hardwareBackPress', onBack);
-    return () => BackHandler.removeEventListener('hardwareBackPress', onBack);
-  }, [canGoBack]);
+    }
+    prepare();
+  }, []);
 
-  const handleLoadEnd = async () => {
-    setLoading(false);
-    await SplashScreen.hideAsync();
+  const onLayoutRootView = useCallback(async () => {
+    if (appIsReady) {
+      await SplashScreen.hideAsync();
+    }
+  }, [appIsReady]);
+
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      const backAction = () => {
+        if (webViewRef.current) {
+          webViewRef.current.goBack();
+          return true;
+        }
+        return false;
+      };
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+      return () => backHandler.remove();
+    }
+  }, []);
+
+  async function registerForPushNotifications() {
+    if (!Device.isDevice) return;
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== 'granted') return;
+  }
+
+  const handleMessage = async (event: any) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+
+      if (data.type === 'PICK_IMAGE') {
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          base64: true,
+          quality: 0.8,
+        });
+        if (!result.canceled && result.assets[0]) {
+          webViewRef.current?.injectJavaScript(`
+            window.wcNative.onImagePicked('data:image/jpeg;base64,${result.assets[0].base64}');
+          `);
+        }
+      }
+
+      if (data.type === 'TAKE_PHOTO') {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permiso requerido', 'Se necesita acceso a la cámara.');
+          return;
+        }
+        const result = await ImagePicker.launchCameraAsync({
+          base64: true,
+          quality: 0.8,
+        });
+        if (!result.canceled && result.assets[0]) {
+          webViewRef.current?.injectJavaScript(`
+            window.wcNative.onImagePicked('data:image/jpeg;base64,${result.assets[0].base64}');
+          `);
+        }
+      }
+
+      if (data.type === 'SAVE_FILE') {
+        const fileUri = FileSystem.documentDirectory + (data.filename || 'documento.txt');
+        await FileSystem.writeAsStringAsync(fileUri, data.content, {
+          encoding: data.encoding === 'base64'
+            ? FileSystem.EncodingType.Base64
+            : FileSystem.EncodingType.UTF8,
+        });
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(fileUri);
+        }
+      }
+
+      if (data.type === 'CACHE_DATA') {
+        await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(data.payload));
+      }
+
+      if (data.type === 'GET_CACHE') {
+        const cached = await AsyncStorage.getItem(CACHE_KEY);
+        webViewRef.current?.injectJavaScript(`
+          window.wcNative.onCacheLoaded(${cached || 'null'});
+        `);
+      }
+
+    } catch (e) {
+      console.warn('Message error:', e);
+    }
   };
 
+  const injectedJS = `
+    window.wcNative = {
+      pickImage: () => window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'PICK_IMAGE' })),
+      takePhoto: () => window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'TAKE_PHOTO' })),
+      saveFile: (filename, content, encoding) => window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SAVE_FILE', filename, content, encoding })),
+      cacheData: (payload) => window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'CACHE_DATA', payload })),
+      getCache: () => window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'GET_CACHE' })),
+      onImagePicked: () => {},
+      onCacheLoaded: () => {},
+      isNative: true,
+      platform: 'android',
+    };
+    true;
+  `;
+
+  if (!appIsReady) return null;
+
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0d1b3e" />
+    <View style={styles.container} onLayout={onLayoutRootView}>
+      <StatusBar style="light" backgroundColor="#1a2942" />
       <WebView
         ref={webViewRef}
-        source={{ uri: WC_URL }}
+        source={isOffline
+          ? { html: '<h2 style="font-family:sans-serif;text-align:center;margin-top:40px">Sin conexión</h2>' }
+          : { uri: WEB_URL }
+        }
         style={styles.webview}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        allowsInlineMediaPlayback={true}
-        originWhitelist={['*']}
-        mixedContentMode="always"
-        cacheEnabled={true}
-        onLoadEnd={handleLoadEnd}
-        onNavigationStateChange={(s) => setCanGoBack(s.canGoBack)}
+        injectedJavaScript={injectedJS}
+        onMessage={handleMessage}
+        javaScriptEnabled
+        domStorageEnabled
+        allowsBackForwardNavigationGestures
+        startInLoadingState
       />
-      {loading && (
-        <View style={styles.loader}>
-          <ActivityIndicator size="large" color="#0084ff" />
-        </View>
-      )}
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0d1b3e' },
-  webview:   { flex: 1 },
-  loader:    { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0d1b3e' },
+  container: { flex: 1, backgroundColor: '#1a2942' },
+  webview: { flex: 1 },
 });
