@@ -37,42 +37,11 @@ SplashScreen.preventAutoHideAsync();
 // ─── Constantes ───────────────────────────────────────────────────────────
 const WC_URL = 'https://kacn1z-del.github.io/wc-editorpro/';
 const CACHE_DIR = FileSystem.cacheDirectory + 'wc-editor/';
-const CACHED_HTML_PATH = CACHE_DIR + 'index.html';
-const LAST_CACHE_KEY = '@wc_last_cache';
-const CACHE_TTL_MS = 1000 * 60 * 60 * 24; // 24 horas
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 async function ensureCacheDir() {
   const info = await FileSystem.getInfoAsync(CACHE_DIR);
   if (!info.exists) await FileSystem.makeDirectoryAsync(CACHE_DIR, { intermediates: true });
-}
-
-async function cacheEditorHTML() {
-  try {
-    await ensureCacheDir();
-    const result = await FileSystem.downloadAsync(WC_URL, CACHED_HTML_PATH);
-    if (result.status === 200) {
-      await AsyncStorage.setItem(LAST_CACHE_KEY, Date.now().toString());
-      return true;
-    }
-  } catch (e) {
-    console.log('Cache download error:', e);
-  }
-  return false;
-}
-
-async function getCachedSource(): Promise<{ uri: string } | null> {
-  try {
-    const info = await FileSystem.getInfoAsync(CACHED_HTML_PATH);
-    if (!info.exists) return null;
-    const lastCache = await AsyncStorage.getItem(LAST_CACHE_KEY);
-    if (!lastCache) return null;
-    const age = Date.now() - parseInt(lastCache);
-    if (age > CACHE_TTL_MS) return null; // caché vencida
-    return { uri: CACHED_HTML_PATH };
-  } catch {
-    return null;
-  }
 }
 
 async function registerForPushNotifications(): Promise<string | null> {
@@ -118,23 +87,22 @@ export default function App() {
       setIsOnline(online);
 
       // Cargar el editor desde el HTML local empaquetado en assets.
-      // Siempre funciona, sin internet, al instante.
+      // Usa URI directo — NO lee el archivo como string (2.3MB sería lento).
       try {
         const asset = Asset.fromModule(require('./assets/editor.html'));
         await asset.downloadAsync();
         const localUri = asset.localUri || asset.uri;
-        const htmlContent = await FileSystem.readAsStringAsync(localUri);
-        setSource({ html: htmlContent, baseUrl: 'https://kacn1z-del.github.io/wc-editorpro/' });
+        setSource({ uri: localUri });
       } catch (e) {
         console.log('Error cargando editor local:', e);
         // Fallback: si algo falla, cargar desde internet
         setSource({ uri: WC_URL });
       }
 
-      // 4. Notificaciones push
+      // Notificaciones push
       await registerForPushNotifications();
 
-      // 5. Notificación de bienvenida (solo primera vez)
+      // Notificación de bienvenida (solo primera vez)
       const welcomed = await AsyncStorage.getItem('@wc_welcomed');
       if (!welcomed) {
         await Notifications.scheduleNotificationAsync({
@@ -317,15 +285,6 @@ export default function App() {
         break;
       }
 
-      // 🔄 Forzar actualización de caché
-      case 'REFRESH_CACHE': {
-        const ok = await cacheEditorHTML();
-        webViewRef.current?.injectJavaScript(`
-          if(typeof showToast==='function') showToast('${ok ? 'Caché actualizada ✅' : 'Error actualizando caché ❌'}'); true;
-        `);
-        break;
-      }
-
       default:
         break;
     }
@@ -363,12 +322,10 @@ export default function App() {
           window.__nativeMsg({type:'SCHEDULE_NOTIFICATION', title, body, secondsFromNow: seconds||5});
         },
         networkStatus: function() { window.__nativeMsg({type:'GET_NETWORK_STATUS'}); },
-        refreshCache:  function() { window.__nativeMsg({type:'REFRESH_CACHE'}); },
       };
 
-      // Inyectar botones nativos en el toolbar si existe
+      // Banner offline si no hay internet
       document.addEventListener('DOMContentLoaded', function() {
-        // Banner offline si no hay internet
         if (!window.__IS_ONLINE__) {
           var banner = document.createElement('div');
           banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#e74c3c;color:#fff;text-align:center;padding:6px;font-size:12px;font-weight:bold;z-index:99999;';
