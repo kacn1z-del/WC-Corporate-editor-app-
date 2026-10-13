@@ -768,7 +768,7 @@ body{display:flex;flex-direction:column}
   background:#d0d0d5;border-radius:3px;margin:8px auto 12px}
 .dropdown.show{display:block;animation:slideUp .3s ease}
 .dropdown-backdrop{display:none;position:fixed;inset:0;
-  background:rgba(0,0,0,.3);z-index:9998}
+  background:rgba(0,0,0,.3);z-index:9990}
 .dropdown-backdrop.show{display:block}
 .dsec{padding:6px 16px 2px;font-size:10px;color:#aaa;font-weight:700;
   text-transform:uppercase;letter-spacing:.8px;margin-top:4px}
@@ -5097,6 +5097,8 @@ function advReplaceAll() {
 
 // ── Menu Tab System ─────────────────────────────────────────
 var activeMenu = null;
+// Guardar padres originales de los dropdowns para restaurarlos
+var _ddOrigParents = {};
 function toggleMenu(name) {
   var dd = document.getElementById('menu-' + name);
   var backdrop = document.getElementById('menuBackdrop');
@@ -5106,15 +5108,28 @@ function toggleMenu(name) {
     return;
   }
   closeAllMenus();
+  // Mover dropdown al body para que z-index funcione en Android WebView
+  if(!_ddOrigParents[name]) {
+    _ddOrigParents[name] = dd.parentNode;
+  }
+  document.body.appendChild(dd);
   dd.classList.add('show');
   backdrop.classList.add('show');
   btn.classList.add('active');
   activeMenu = name;
 }
 function closeAllMenus() {
-  document.querySelectorAll('.dropdown').forEach(function(d) { d.classList.remove('show'); });
+  document.querySelectorAll('.dropdown.show').forEach(function(d) {
+    d.classList.remove('show');
+    // Devolver al padre original
+    var id = d.id.replace('menu-','');
+    if(_ddOrigParents[id]) {
+      _ddOrigParents[id].appendChild(d);
+    }
+  });
   document.querySelectorAll('.menu-btn').forEach(function(b) { b.classList.remove('active'); });
-  document.getElementById('menuBackdrop').classList.remove('show');
+  var bd = document.getElementById('menuBackdrop');
+  if(bd) bd.classList.remove('show');
   activeMenu = null;
 }
 
@@ -21354,21 +21369,68 @@ editor.addEventListener('paste', function(e) {
 
 // ── Init ────────────────────────────────────────────────────
 
-// ── iOS Touch Fix: Event delegation for dropdown items ──
-document.addEventListener('click', function(e) {
-  var di = e.target.closest('.di');
-  if(!di) return;
-  // Check if inside an active dropdown
-  var dd = di.closest('.dropdown');
-  if(!dd || !dd.classList.contains('show')) return;
-  // Get the onclick attribute and execute it
-  var onc = di.getAttribute('onclick');
-  if(onc) {
-    e.preventDefault();
-    e.stopPropagation();
-    try { new Function(onc)(); } catch(err) { console.log('Menu action error:', err); }
-  }
-}, true); // capture phase to beat backdrop
+// ── iOS WebView Touch Fix ──────────────────────────────────
+// iOS WebView no dispara click en divs dentro de contenedores
+// con overflow-y:auto (interpreta toques como scroll).
+// Solución: usar touchstart/touchend con detección de tap.
+(function() {
+  var touchStartX = 0, touchStartY = 0, touchStartTime = 0, touchTarget = null;
+
+  document.addEventListener('touchstart', function(e) {
+    var t = e.touches[0];
+    touchStartX = t.clientX;
+    touchStartY = t.clientY;
+    touchStartTime = Date.now();
+    touchTarget = e.target;
+  }, {passive: true});
+
+  document.addEventListener('touchend', function(e) {
+    if (!touchTarget) return;
+    var t = e.changedTouches[0];
+    var dx = Math.abs(t.clientX - touchStartX);
+    var dy = Math.abs(t.clientY - touchStartY);
+    var dt = Date.now() - touchStartTime;
+
+    // Solo si fue un tap (poco movimiento, menos de 400ms)
+    if (dx > 12 || dy > 12 || dt > 400) { touchTarget = null; return; }
+
+    // Buscar el .di más cercano al punto de toque
+    var di = touchTarget.closest ? touchTarget.closest('.di') : null;
+    if (!di) {
+      // También verificar .fabbtn y .fbtn (botones de panels flotantes)
+      di = touchTarget.closest ? (touchTarget.closest('.fabbtn') || touchTarget.closest('.fbtn')) : null;
+    }
+    if (!di) { touchTarget = null; return; }
+
+    var onc = di.getAttribute('onclick');
+    if (onc) {
+      e.preventDefault();
+      e.stopPropagation();
+      // Feedback visual
+      di.style.background = '#e0eeff';
+      setTimeout(function() { di.style.background = ''; }, 150);
+      // Ejecutar acción con pequeño delay para feedback visual
+      setTimeout(function() {
+        try { new Function(onc)(); } catch(err) { console.log('Touch action error:', err); }
+      }, 80);
+    }
+    touchTarget = null;
+  }, {capture: true});
+
+  // También fix para botones regulares dentro de dropdowns/panels
+  document.addEventListener('click', function(e) {
+    var di = e.target.closest('.di') || e.target.closest('.fabbtn') || e.target.closest('.fbtn');
+    if (!di) return;
+    var dd = di.closest('.dropdown') || di.closest('#fabPanel') || di.closest('#communityPanel');
+    if (!dd) return;
+    var onc = di.getAttribute('onclick');
+    if (onc) {
+      e.preventDefault();
+      e.stopPropagation();
+      try { new Function(onc)(); } catch(err) {}
+    }
+  }, true);
+})();
 
 document.addEventListener('DOMContentLoaded', function() {
   // Load theme preferences
