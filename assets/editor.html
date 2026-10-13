@@ -69,8 +69,8 @@ body{display:flex;flex-direction:column}
   margin:12px auto;box-shadow:0 4px 20px rgba(0,0,0,.18);border-radius:2px}}
 .wc-editor:focus{border-color:#0084ff;box-shadow:0 0 0 3px rgba(0,132,255,.1)}
 .wc-editor:empty::before{
-  content:'Empezá a escribir aquí...';color:#aaa;pointer-events:none;
-  font-style:italic;font-family:'Calibri','Carlito','Segoe UI',sans-serif}
+  content:'Escriba aquí o presione Inicio > Nuevo documento';color:#bbb;pointer-events:none;
+  font-style:normal;font-family:'Calibri','Carlito','Segoe UI',sans-serif;font-size:11pt}
 .wc-editor img{max-width:100%;height:auto;border-radius:4px;margin:8px 0}
 .wc-editor table{border-collapse:collapse;width:100%;margin:12px 0}
 .wc-editor td,.wc-editor th{border:1px solid #ddd;padding:8px;text-align:left}
@@ -1297,12 +1297,12 @@ body.theme-dark .wc-find-bar input{background:#1a1a2e;color:#e0e0e0;border-color
     <div class="di" role="button" tabindex="0" onclick="menuAction('calcIVA')"><span class="ico">🧮</span><div>Calculadora IVA (13%)</div></div>
     <div class="di" role="button" tabindex="0" onclick="menuAction('calcLiquidacion')"><span class="ico">💰</span><div>Liquidacion laboral CR</div></div>
     <div class="di" role="button" tabindex="0" onclick="menuAction('calcHorasExtra')"><span class="ico">⏱</span><div>Calculadora horas extra</div></div>
-    <div class="di" role="button" tabindex="0" onclick="menuAction('calcRenta')"><span class="ico">📈</span><div>Impuesto renta 2024</div></div>
+    <div class="di" role="button" tabindex="0" onclick="menuAction('calcRenta')"><span class="ico">📈</span><div>Impuesto renta 2026</div></div>
     <div class="dd"></div>
     <div class="dsec">Utilidades</div>
     <div class="di" role="button" tabindex="0" onclick="menuAction('numToLetras')"><span class="ico">🔢</span><div>Numeros a letras (colones)</div></div>
     <div class="di" role="button" tabindex="0" onclick="menuAction('correosInst')"><span class="ico">📧</span><div>Correos institucionales CR</div></div>
-    <div class="di" role="button" tabindex="0" onclick="menuAction('salariosMinimos')"><span class="ico">💵</span><div>Salarios minimos CR 2024</div></div>
+    <div class="di" role="button" tabindex="0" onclick="menuAction('salariosMinimos')"><span class="ico">💵</span><div>Salarios mínimos CR 2026</div></div>
    </div>
   </div>
 
@@ -1331,7 +1331,7 @@ body.theme-dark .wc-find-bar input{background:#1a1a2e;color:#e0e0e0;border-color
     <div class="dsec">Informacion Costa Rica</div>
     <div class="di" role="button" tabindex="0" onclick="menuAction('cantonesInfo')"><span class="ico">🗺️</span><div>Cantones y provincias</div></div>
     <div class="di" role="button" tabindex="0" onclick="menuAction('leyesCR')"><span class="ico">📚</span><div>Leyes y codigos CR</div></div>
-    <div class="di" role="button" tabindex="0" onclick="menuAction('feriadosCR')"><span class="ico">📅</span><div>Feriados CR 2024-2025</div></div>
+    <div class="di" role="button" tabindex="0" onclick="menuAction('feriadosCR')"><span class="ico">📅</span><div>Feriados CR 2026-2027</div></div>
     <div class="di" role="button" tabindex="0" onclick="menuAction('telefonosInst')"><span class="ico">📞</span><div>Telefonos institucionales</div></div>
    </div>
   </div>
@@ -5138,7 +5138,7 @@ function menuAction(action) {
   closeAllMenus();
   switch(action) {
     // Inicio
-    case 'new': if(confirm('¿Crear nuevo documento? Se perderá el contenido actual.')) { editor.innerHTML = ''; updateCounts(); showToast('📄 Nuevo documento'); } break;
+    case 'new': if(confirm('¿Crear nuevo documento? Se perderá el contenido actual.')) { newWordDoc(); } break;
     case 'templates': openTemplates(); break;
     case 'h1': document.execCommand('formatBlock',false,'H1'); break;
     case 'h2': document.execCommand('formatBlock',false,'H2'); break;
@@ -6468,25 +6468,68 @@ function generateActa() {
   var now = new Date();
   var fecha = now.toLocaleDateString('es-CR', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
   var hora = now.toLocaleTimeString('es-CR', {hour:'2-digit',minute:'2-digit'});
-  var doc = '<h1 style="text-align:center;color:#1a1a2e">ACTA DE REUNION</h1>';
+  var listaAsist = asistentes.split(',').map(function(a){return a.trim();}).filter(function(a){return a.length>0;});
+  var totalAsist = listaAsist.length;
+  var doc = '<h1 style="text-align:center;color:#1a1a2e">ACTA DE REUNIÓN</h1>';
   doc += '<h2 style="text-align:center;color:#666">' + org + '</h2>';
-  doc += '<hr style="border:1px solid #0084ff;margin:16px 0">';
-  doc += '<p><strong>Fecha:</strong> ' + fecha + '</p>';
-  doc += '<p><strong>Hora:</strong> ' + hora + '</p>';
-  doc += '<p><strong>Lugar:</strong> ' + lugar + '</p>';
-  doc += '<p><strong>Asistentes:</strong></p><ul>';
-  asistentes.split(',').forEach(function(a) { doc += '<li>' + a.trim() + '</li>'; });
-  doc += '</ul>';
-  doc += '<h3>ORDEN DEL DIA</h3>';
-  doc += '<div style="white-space:pre-line">' + temas + '</div>';
-  doc += '<h3>ACUERDOS</h3>';
-  doc += '<div style="white-space:pre-line">' + acuerdos + '</div>';
-  doc += '<br><hr style="border:1px solid #ddd">';
-  doc += '<p style="margin-top:40px"><strong>Firma del Presidente:</strong> ________________________</p>';
-  doc += '<p><strong>Firma del Secretario:</strong> ________________________</p>';
+  doc += '<p style="text-align:center;color:#888">Conforme al Código de Comercio de Costa Rica (Ley N° 3284)<br>y normativa aplicable a personas jurídicas</p>';
+  doc += '<hr style="border:2px solid #1a1a2e;margin:16px 0">';
+  doc += '<table style="width:100%;border-collapse:collapse;margin:12px 0">';
+  doc += '<tr><td style="padding:8px;border:1px solid #ddd;width:30%;font-weight:600;background:#f8f8f8">Acta N°</td><td style="padding:8px;border:1px solid #ddd">________________________</td></tr>';
+  doc += '<tr><td style="padding:8px;border:1px solid #ddd;font-weight:600;background:#f8f8f8">Organización</td><td style="padding:8px;border:1px solid #ddd">' + org + '</td></tr>';
+  doc += '<tr><td style="padding:8px;border:1px solid #ddd;font-weight:600;background:#f8f8f8">Tipo de sesión</td><td style="padding:8px;border:1px solid #ddd">☐ Ordinaria &nbsp;&nbsp; ☐ Extraordinaria</td></tr>';
+  doc += '<tr><td style="padding:8px;border:1px solid #ddd;font-weight:600;background:#f8f8f8">Fecha</td><td style="padding:8px;border:1px solid #ddd">' + fecha + '</td></tr>';
+  doc += '<tr><td style="padding:8px;border:1px solid #ddd;font-weight:600;background:#f8f8f8">Hora de inicio</td><td style="padding:8px;border:1px solid #ddd">' + hora + '</td></tr>';
+  doc += '<tr><td style="padding:8px;border:1px solid #ddd;font-weight:600;background:#f8f8f8">Hora de finalización</td><td style="padding:8px;border:1px solid #ddd">________________________</td></tr>';
+  doc += '<tr><td style="padding:8px;border:1px solid #ddd;font-weight:600;background:#f8f8f8">Lugar</td><td style="padding:8px;border:1px solid #ddd">' + lugar + '</td></tr>';
+  doc += '<tr><td style="padding:8px;border:1px solid #ddd;font-weight:600;background:#f8f8f8">Convocada por</td><td style="padding:8px;border:1px solid #ddd">________________________</td></tr></table>';
+  doc += '<h3>I. VERIFICACIÓN DE QUÓRUM</h3>';
+  doc += '<p>Se verifica la presencia de <strong>' + totalAsist + '</strong> persona(s), conformando el quórum necesario para sesionar válidamente conforme a los estatutos de la organización y el artículo 158 del Código de Comercio (para sociedades anónimas, se requiere la representación de más del 50% del capital social en asambleas ordinarias).</p>';
+  doc += '<h3>II. LISTA DE ASISTENTES</h3>';
+  doc += '<table style="width:100%;border-collapse:collapse;margin:12px 0"><tr style="background:#1a1a2e;color:#fff"><th style="padding:10px;text-align:left">N°</th><th style="padding:10px;text-align:left">Nombre</th><th style="padding:10px;text-align:left">Cargo / Representación</th><th style="padding:10px;text-align:left">Firma</th></tr>';
+  listaAsist.forEach(function(a, i) {
+    doc += '<tr><td style="padding:8px;border:1px solid #ddd">' + (i+1) + '</td><td style="padding:8px;border:1px solid #ddd">' + a + '</td><td style="padding:8px;border:1px solid #ddd">________________</td><td style="padding:8px;border:1px solid #ddd">________________</td></tr>';
+  });
+  doc += '</table>';
+  doc += '<p style="font-size:13px;color:#666"><strong>Ausentes justificados:</strong> ________________________</p>';
+  doc += '<p style="font-size:13px;color:#666"><strong>Ausentes no justificados:</strong> ________________________</p>';
+  doc += '<h3>III. APERTURA DE LA SESIÓN</h3>';
+  doc += '<p>Siendo las <strong>' + hora + '</strong> del día ' + fecha + ', se declara abierta la sesión con la presencia de los miembros indicados, verificado el quórum estatutario.</p>';
+  doc += '<h3>IV. APROBACIÓN DEL ACTA ANTERIOR</h3>';
+  doc += '<p>Se da lectura al acta de la sesión anterior N° ________. Sometida a votación:</p>';
+  doc += '<p>☐ Se aprueba por unanimidad &nbsp;&nbsp; ☐ Se aprueba con observaciones &nbsp;&nbsp; ☐ No aplica (primera sesión)</p>';
+  doc += '<p>Observaciones: ________________________</p>';
+  doc += '<h3>V. ORDEN DEL DÍA</h3>';
+  var temasArr = temas.split('\n').filter(function(t){return t.trim().length>0;});
+  if (temasArr.length > 1) {
+    doc += '<ol style="margin:8px 0;padding-left:24px">';
+    temasArr.forEach(function(t) { doc += '<li style="margin:4px 0">' + t.trim() + '</li>'; });
+    doc += '</ol>';
+  } else {
+    doc += '<div style="white-space:pre-line;padding:12px;border:1px solid #ddd;border-radius:8px;margin:8px 0">' + temas + '</div>';
+  }
+  doc += '<h3>VI. DESARROLLO DE LOS PUNTOS Y DELIBERACIONES</h3>';
+  doc += '<div style="padding:12px;border:1px solid #ddd;border-radius:8px;margin:8px 0;min-height:80px;color:#999"><em>Describir las deliberaciones, propuestas, discusiones y observaciones de los asistentes sobre cada punto del orden del día.</em></div>';
+  doc += '<h3>VII. ACUERDOS Y RESOLUCIONES</h3>';
+  doc += '<p>Los siguientes acuerdos fueron sometidos a votación y aprobados por los presentes:</p>';
+  var acuerdosArr = acuerdos.split('\n').filter(function(a){return a.trim().length>0;});
+  if (acuerdosArr.length > 1) {
+    acuerdosArr.forEach(function(a, i) {
+      doc += '<div style="padding:10px;border-left:4px solid #1a1a2e;margin:8px 0;background:#f8f8f8;border-radius:0 8px 8px 0"><strong>Acuerdo ' + (i+1) + ':</strong> ' + a.trim() + '<br><span style="font-size:12px;color:#666">Votación: ☐ Unanimidad &nbsp; ☐ Mayoría (_____ a favor, _____ en contra, _____ abstenciones)</span></div>';
+    });
+  } else {
+    doc += '<div style="padding:10px;border-left:4px solid #1a1a2e;margin:8px 0;background:#f8f8f8;border-radius:0 8px 8px 0"><strong>Acuerdo 1:</strong> ' + acuerdos + '<br><span style="font-size:12px;color:#666">Votación: ☐ Unanimidad &nbsp; ☐ Mayoría (_____ a favor, _____ en contra, _____ abstenciones)</span></div>';
+  }
+  doc += '<h3>VIII. ASUNTOS VARIOS</h3>';
+  doc += '<div style="padding:12px;border:1px solid #ddd;border-radius:8px;margin:8px 0;min-height:40px;color:#999"><em>Temas adicionales tratados fuera del orden del día.</em></div>';
+  doc += '<h3>IX. CIERRE DE LA SESIÓN</h3>';
+  doc += '<p>No habiendo más asuntos que tratar, se levanta la sesión siendo las ________________________ horas del día ' + fecha + '.</p>';
+  doc += '<p>La presente acta fue leída y aprobada por todos los presentes, quienes firman en señal de conformidad.</p>';
+  doc += '<br><div style="display:flex;flex-wrap:wrap;justify-content:space-around;margin-top:30px"><div style="text-align:center;margin:10px"><p>________________________</p><p><strong>Presidente de la sesión</strong><br>Nombre: ________________</p></div><div style="text-align:center;margin:10px"><p>________________________</p><p><strong>Secretario(a) de actas</strong><br>Nombre: ________________</p></div></div>';
+  doc += '<p style="margin-top:20px;font-size:12px;color:#888;text-align:center"><em>Nota: De conformidad con el artículo 259 del Código de Comercio, las actas de las asambleas de accionistas deben ser transcritas en el libro de actas debidamente legalizado por el Registro Nacional.</em></p>';
   editor.innerHTML = doc;
   closeLegal();
-  showToast('Acta generada');
+  showToast('Acta de reunión generada');
 }
 
 // ── F62: Contrato NDA CR ────────────────────────────────────
@@ -6511,24 +6554,53 @@ function generateNDA() {
   var doc = '<h1 style="text-align:center;color:#1a1a2e">ACUERDO DE CONFIDENCIALIDAD</h1>';
   doc += '<h2 style="text-align:center;color:#666">(Non-Disclosure Agreement)</h2>';
   doc += '<hr style="border:2px solid #1a1a2e;margin:16px 0">';
-  doc += '<p>En San Jose, Costa Rica, a los ' + fecha + ', entre:</p>';
-  doc += '<p><strong>PARTE REVELADORA:</strong> ' + rev + ', cedula ' + cedRev + '</p>';
-  doc += '<p><strong>PARTE RECEPTORA:</strong> ' + rec + ', cedula ' + cedRec + '</p>';
-  doc += '<p>Acuerdan celebrar el presente Acuerdo de Confidencialidad conforme a las siguientes clausulas:</p>';
-  doc += '<h3>CLAUSULA PRIMERA: DEFINICION DE INFORMACION CONFIDENCIAL</h3>';
-  doc += '<p>Se considera Informacion Confidencial toda aquella informacion tecnica, comercial, financiera, estrategica, operativa o de cualquier otra naturaleza que sea revelada por la Parte Reveladora a la Parte Receptora, ya sea de forma oral, escrita, electronica o por cualquier otro medio.</p>';
-  doc += '<h3>CLAUSULA SEGUNDA: OBLIGACIONES DE CONFIDENCIALIDAD</h3>';
-  doc += '<p>La Parte Receptora se obliga a: a) Mantener estricta confidencialidad sobre toda la Informacion Confidencial; b) No divulgar, publicar, ceder ni transferir la Informacion Confidencial a terceros; c) Utilizar la Informacion Confidencial unicamente para los fines acordados entre las partes.</p>';
-  doc += '<h3>CLAUSULA TERCERA: DURACION</h3>';
-  doc += '<p>El presente acuerdo tendra una vigencia de <strong>' + dur + ' ano(s)</strong> contados a partir de la fecha de firma.</p>';
-  doc += '<h3>CLAUSULA CUARTA: LEGISLACION APLICABLE</h3>';
-  doc += '<p>Este acuerdo se rige por las leyes de la Republica de Costa Rica. Para cualquier controversia derivada del presente acuerdo, las partes se someten a los tribunales de justicia de San Jose, Costa Rica.</p>';
-  doc += '<h3>CLAUSULA QUINTA: PENALIDADES</h3>';
-  doc += '<p>El incumplimiento de las obligaciones establecidas en este acuerdo dara lugar a las acciones legales correspondientes, incluyendo indemnizacion por danos y perjuicios conforme a la legislacion costarricense vigente.</p>';
+  doc += '<p>En la ciudad de San José, República de Costa Rica, a los ' + fecha + ', comparecen por una parte:</p>';
+  doc += '<p><strong>PARTE REVELADORA:</strong> ' + rev + ', cédula de identidad número ' + cedRev + ', en adelante denominada "LA PARTE REVELADORA".</p>';
+  doc += '<p><strong>PARTE RECEPTORA:</strong> ' + rec + ', cédula de identidad número ' + cedRec + ', en adelante denominada "LA PARTE RECEPTORA".</p>';
+  doc += '<p>Ambas partes, en pleno uso de sus facultades legales y actuando en su propio nombre y representación, acuerdan celebrar el presente <strong>Acuerdo de Confidencialidad</strong>, el cual se regirá por las siguientes cláusulas:</p>';
+  doc += '<h3>CLÁUSULA PRIMERA: DEFINICIÓN DE INFORMACIÓN CONFIDENCIAL</h3>';
+  doc += '<p><strong>1.1</strong> Para los efectos del presente acuerdo, se entenderá por "Información Confidencial" toda aquella información de naturaleza técnica, comercial, financiera, contable, estratégica, operativa, organizacional, de propiedad intelectual o industrial, secretos comerciales, listas de clientes, datos de proveedores, planes de negocios, proyecciones financieras, metodologías, procesos, fórmulas, diseños, software, código fuente, bases de datos, y cualquier otra información que sea revelada por la Parte Reveladora a la Parte Receptora, ya sea de forma oral, escrita, gráfica, electrónica, magnética o por cualquier otro medio o soporte.</p>';
+  doc += '<p><strong>1.2</strong> Se considerará igualmente confidencial toda aquella información que, por su naturaleza o por las circunstancias de su divulgación, deba razonablemente considerarse como confidencial, aún cuando no haya sido expresamente designada como tal.</p>';
+  doc += '<p><strong>1.3</strong> No se considerará Información Confidencial aquella que: (a) sea o se convierta en información de dominio público sin mediar incumplimiento de este acuerdo; (b) estuviera legítimamente en posesión de la Parte Receptora antes de su divulgación; (c) sea desarrollada independientemente por la Parte Receptora sin utilizar la Información Confidencial; (d) sea obtenida lícitamente de un tercero sin obligación de confidencialidad.</p>';
+  doc += '<h3>CLÁUSULA SEGUNDA: OBLIGACIONES DE LA PARTE RECEPTORA</h3>';
+  doc += '<p>La Parte Receptora se obliga a:</p>';
+  doc += '<p><strong>2.1</strong> Mantener estricta y absoluta confidencialidad sobre toda la Información Confidencial recibida.</p>';
+  doc += '<p><strong>2.2</strong> No divulgar, publicar, ceder, licenciar, transferir, reproducir ni comunicar la Información Confidencial a terceras personas, sean estas físicas o jurídicas, sin el previo consentimiento escrito de la Parte Reveladora.</p>';
+  doc += '<p><strong>2.3</strong> Utilizar la Información Confidencial única y exclusivamente para los fines del negocio o proyecto acordado entre las partes.</p>';
+  doc += '<p><strong>2.4</strong> Limitar el acceso a la Información Confidencial únicamente a aquellos empleados, colaboradores o asesores que requieran conocerla para los fines autorizados, y asegurarse de que dichas personas estén vinculadas por obligaciones de confidencialidad no menos restrictivas que las contenidas en este acuerdo.</p>';
+  doc += '<p><strong>2.5</strong> Adoptar todas las medidas de seguridad razonables para proteger la Información Confidencial contra acceso, uso o divulgación no autorizados, con el mismo grado de cuidado que emplea para proteger su propia información confidencial.</p>';
+  doc += '<p><strong>2.6</strong> Notificar inmediatamente a la Parte Reveladora sobre cualquier uso o divulgación no autorizados de la Información Confidencial de los que tenga conocimiento.</p>';
+  doc += '<h3>CLÁUSULA TERCERA: DEVOLUCIÓN DE INFORMACIÓN</h3>';
+  doc += '<p><strong>3.1</strong> A la terminación de este acuerdo o cuando la Parte Reveladora lo solicite, la Parte Receptora deberá devolver o destruir toda la Información Confidencial recibida, incluyendo todas las copias, extractos, resúmenes y cualquier material derivado de dicha información, en un plazo no mayor a quince (15) días hábiles.</p>';
+  doc += '<p><strong>3.2</strong> La Parte Receptora deberá certificar por escrito la destrucción o devolución completa de la Información Confidencial.</p>';
+  doc += '<h3>CLÁUSULA CUARTA: PROPIEDAD INTELECTUAL</h3>';
+  doc += '<p>Nada en este acuerdo otorga a la Parte Receptora ningún derecho, título, licencia o interés sobre la Información Confidencial o sobre cualquier propiedad intelectual o industrial de la Parte Reveladora. La Información Confidencial permanecerá en todo momento como propiedad exclusiva de la Parte Reveladora.</p>';
+  doc += '<h3>CLÁUSULA QUINTA: VIGENCIA</h3>';
+  doc += '<p><strong>5.1</strong> El presente acuerdo tendrá una vigencia de <strong>' + dur + ' año(s)</strong> contados a partir de la fecha de su firma.</p>';
+  doc += '<p><strong>5.2</strong> No obstante lo anterior, las obligaciones de confidencialidad contenidas en este acuerdo sobrevivirán a su terminación por un período adicional de dos (2) años, durante el cual la Parte Receptora seguirá obligada a mantener la confidencialidad de la información recibida.</p>';
+  doc += '<h3>CLÁUSULA SEXTA: DIVULGACIÓN POR ORDEN JUDICIAL</h3>';
+  doc += '<p>En caso de que la Parte Receptora sea requerida por orden judicial o administrativa para divulgar la Información Confidencial, deberá: (a) notificar inmediatamente a la Parte Reveladora antes de proceder a la divulgación; (b) cooperar con la Parte Reveladora para obtener una orden de protección u otro recurso apropiado; (c) divulgar únicamente la porción de Información Confidencial estrictamente requerida por la orden.</p>';
+  doc += '<h3>CLÁUSULA SÉPTIMA: INCUMPLIMIENTO Y RESPONSABILIDAD</h3>';
+  doc += '<p><strong>7.1</strong> Las partes reconocen que el incumplimiento de las obligaciones de confidencialidad puede causar daños irreparables a la Parte Reveladora, los cuales no podrían ser adecuadamente compensados mediante una indemnización económica.</p>';
+  doc += '<p><strong>7.2</strong> En caso de incumplimiento, la Parte Reveladora tendrá derecho a: (a) solicitar medidas cautelares y/o acciones inhibitorias ante los tribunales competentes; (b) reclamar la indemnización de todos los daños y perjuicios causados, conforme a los artículos 1045 y siguientes del Código Civil de Costa Rica; (c) dar por terminado el acuerdo de manera inmediata.</p>';
+  doc += '<p><strong>7.3</strong> La Parte Receptora será responsable de cualquier incumplimiento de este acuerdo por parte de sus empleados, representantes, asesores o cualquier persona a quien haya dado acceso a la Información Confidencial.</p>';
+  doc += '<h3>CLÁUSULA OCTAVA: LEGISLACIÓN APLICABLE Y JURISDICCIÓN</h3>';
+  doc += '<p><strong>8.1</strong> Este acuerdo se regirá e interpretará conforme a las leyes de la República de Costa Rica, incluyendo pero no limitado a la Ley de Información No Divulgada N° 7975, la Ley de Derechos de Autor y Derechos Conexos N° 6683, y el Código Civil.</p>';
+  doc += '<p><strong>8.2</strong> Para cualquier controversia derivada del presente acuerdo, las partes se someten a la jurisdicción de los tribunales de justicia de San José, Costa Rica, renunciando expresamente a cualquier otro fuero que pudiera corresponderles.</p>';
+  doc += '<h3>CLÁUSULA NOVENA: DISPOSICIONES GENERALES</h3>';
+  doc += '<p><strong>9.1</strong> Este acuerdo constituye el acuerdo íntegro entre las partes respecto a la materia aquí tratada y sustituye cualquier acuerdo previo, ya sea oral o escrito.</p>';
+  doc += '<p><strong>9.2</strong> Cualquier modificación a este acuerdo deberá constar por escrito y ser firmada por ambas partes.</p>';
+  doc += '<p><strong>9.3</strong> La renuncia de cualquiera de las partes a ejercer un derecho bajo este acuerdo no constituirá una renuncia a ejercer dicho derecho en el futuro.</p>';
+  doc += '<p><strong>9.4</strong> Si alguna disposición de este acuerdo fuera declarada nula o inaplicable, las demás disposiciones mantendrán su plena vigencia y efecto.</p>';
+  doc += '<p>En fe de lo cual, las partes firman el presente acuerdo en dos ejemplares de un mismo tenor y a un solo efecto, en la ciudad de San José, Costa Rica, a los ' + fecha + '.</p>';
   doc += '<br><hr>';
   doc += '<div style="display:flex;justify-content:space-around;margin-top:40px">';
-  doc += '<div style="text-align:center"><p>________________________</p><p><strong>' + rev + '</strong><br>Parte Reveladora</p></div>';
-  doc += '<div style="text-align:center"><p>________________________</p><p><strong>' + rec + '</strong><br>Parte Receptora</p></div>';
+  doc += '<div style="text-align:center"><p>________________________</p><p><strong>' + rev + '</strong><br>Cédula: ' + cedRev + '<br>Parte Reveladora</p></div>';
+  doc += '<div style="text-align:center"><p>________________________</p><p><strong>' + rec + '</strong><br>Cédula: ' + cedRec + '<br>Parte Receptora</p></div>';
+  doc += '</div>';
+  doc += '<br><div style="display:flex;justify-content:space-around;margin-top:20px">';
+  doc += '<div style="text-align:center"><p>________________________</p><p>Testigo 1<br>Cédula: _______________</p></div>';
+  doc += '<div style="text-align:center"><p>________________________</p><p>Testigo 2<br>Cédula: _______________</p></div>';
   doc += '</div>';
   editor.innerHTML = doc;
   closeLegal();
@@ -6547,21 +6619,25 @@ function openDeclaracionJurada() {
   showLegal('Declaracion Jurada CR', h);
 }
 function generateDeclaracion() {
-  var nombre = document.getElementById('lf_nombre').value || '[NOMBRE]';
-  var cedula = document.getElementById('lf_cedula').value || '[CEDULA]';
+  var nombre = document.getElementById('lf_nombre').value || '[NOMBRE COMPLETO]';
+  var cedula = document.getElementById('lf_cedula').value || '[CÉDULA]';
   var domicilio = document.getElementById('lf_domicilio').value || '[DOMICILIO]';
-  var declaracion = document.getElementById('lf_declaracion').value || '[CONTENIDO DE LA DECLARACION]';
+  var declaracion = document.getElementById('lf_declaracion').value || '[CONTENIDO DE LA DECLARACIÓN]';
   var fecha = new Date().toLocaleDateString('es-CR', {year:'numeric',month:'long',day:'numeric'});
-  var doc = '<h1 style="text-align:center;color:#1a1a2e">DECLARACION JURADA</h1>';
+  var doc = '<h1 style="text-align:center;color:#1a1a2e">DECLARACIÓN JURADA</h1>';
+  doc += '<p style="text-align:center;color:#888">Conforme al artículo 309 del Código Procesal Civil de Costa Rica<br>y los artículos 316 y 317 del Código Penal (delito de perjurio y falso testimonio)</p>';
   doc += '<hr style="border:2px solid #1a1a2e;margin:16px 0">';
-  doc += '<p>Yo, <strong>' + nombre + '</strong>, mayor de edad, portador(a) de la cedula de identidad numero <strong>' + cedula + '</strong>, vecino(a) de <strong>' + domicilio + '</strong>, de manera libre y voluntaria, bajo fe de juramento y advertido(a) de las penas con que la ley castiga el delito de perjurio y falso testimonio, DECLARO:</p>';
-  doc += '<div style="margin:16px 0;padding:16px;border:1px solid #ddd;border-radius:8px;white-space:pre-line">' + declaracion + '</div>';
-  doc += '<p>Es todo. Firmo la presente declaracion jurada en la ciudad de San Jose, Costa Rica, a los ' + fecha + '.</p>';
-  doc += '<br><br>';
-  doc += '<div style="text-align:center;margin-top:40px"><p>________________________</p><p><strong>' + nombre + '</strong><br>Cedula: ' + cedula + '</p></div>';
+  doc += '<p>Yo, <strong>' + nombre + '</strong>, mayor de edad, costarricense, portador(a) de la cédula de identidad número <strong>' + cedula + '</strong>, con domicilio en <strong>' + domicilio + '</strong>, estado civil: _______________, profesión u oficio: _______________, de manera libre, voluntaria y sin coacción de ninguna naturaleza, y habiendo sido debidamente advertido(a) de las penas con que la ley castiga el delito de perjurio y falso testimonio, conforme a los artículos 316 y 317 del Código Penal de Costa Rica (prisión de uno a cinco años), bajo la fe y solemnidad del juramento, <strong>DECLARO LO SIGUIENTE:</strong></p>';
+  doc += '<div style="margin:20px 0;padding:20px;border-left:4px solid #1a1a2e;background:#f8f9fa;border-radius:0 8px 8px 0;white-space:pre-line;line-height:1.8">' + declaracion + '</div>';
+  doc += '<p>La presente declaración la rindo con pleno conocimiento de las responsabilidades legales que asumo, bajo la gravedad del juramento, y manifiesto que todo lo aquí expuesto es la verdad conforme a mi leal saber y entender.</p>';
+  doc += '<p>Declaro además que no existe vínculo de parentesco, afinidad, interés económico ni de cualquier otra naturaleza que pueda comprometer la veracidad de la presente declaración, salvo lo expresamente indicado en el cuerpo de la misma.</p>';
+  doc += '<p>Es todo. Firmo la presente declaración jurada en la ciudad de San José, República de Costa Rica, a los <strong>' + fecha + '</strong>.</p>';
+  doc += '<br><div style="text-align:center;margin-top:40px"><p>________________________</p><p><strong>' + nombre + '</strong><br>Cédula de identidad: ' + cedula + '</p></div>';
+  doc += '<br><div style="display:flex;justify-content:space-around;margin-top:20px"><div style="text-align:center"><p>________________________</p><p>Testigo 1<br>Nombre: _______________<br>Cédula: _______________</p></div><div style="text-align:center"><p>________________________</p><p>Testigo 2<br>Nombre: _______________<br>Cédula: _______________</p></div></div>';
+  doc += '<br><div style="border:2px dashed #999;border-radius:12px;padding:16px;margin-top:20px;background:#fafafa"><h4 style="margin:0 0 8px;color:#666">📋 Autenticación notarial</h4><p style="margin-top:8px;font-size:13px">Ante mí, ________________________, Notario(a) Público(a) con oficina abierta en ________________________, compareció el(la) declarante, a quien identifico por medio de su cédula de identidad número ' + cedula + ', y bajo la solemnidad del juramento prestado, declara que lo manifestado en este documento es la expresión fiel de la verdad. Doy fe de lo anterior. — Firma y sello: ________________________</p></div>';
   editor.innerHTML = doc;
   closeLegal();
-  showToast('Declaracion generada');
+  showToast('Declaración jurada generada');
 }
 
 // ── F64: Calculadora IVA CR ─────────────────────────────────
@@ -6709,19 +6785,41 @@ function openCartaPoder() {
 }
 function generateCartaPoder() {
   var ot = document.getElementById('lf_otorgante').value || '[OTORGANTE]';
-  var cedO = document.getElementById('lf_cedOtorgante').value || '[CEDULA]';
+  var cedO = document.getElementById('lf_cedOtorgante').value || '[CÉDULA]';
   var ap = document.getElementById('lf_apoderado').value || '[APODERADO]';
-  var cedA = document.getElementById('lf_cedApoderado').value || '[CEDULA]';
-  var fac = document.getElementById('lf_facultades').value || '[FACULTADES]';
+  var cedA = document.getElementById('lf_cedApoderado').value || '[CÉDULA]';
+  var fac = document.getElementById('lf_facultades').value || '[FACULTADES OTORGADAS]';
   var vig = document.getElementById('lf_vigenciaCarta').value;
   var fecha = new Date().toLocaleDateString('es-CR',{year:'numeric',month:'long',day:'numeric'});
-  var doc = '<h1 style="text-align:center;color:#1a1a2e">CARTA PODER</h1>';
+  var doc = '<h1 style="text-align:center;color:#1a1a2e">CARTA PODER ESPECIAL</h1>';
+  doc += '<p style="text-align:center;color:#888">Conforme a los artículos 1251 y siguientes del Código Civil de Costa Rica</p>';
   doc += '<hr style="border:2px solid #1a1a2e;margin:16px 0">';
-  doc += '<p>Yo, <strong>' + ot + '</strong>, portador(a) de la cedula <strong>' + cedO + '</strong>, por medio de la presente OTORGO PODER ESPECIAL a favor de <strong>' + ap + '</strong>, portador(a) de la cedula <strong>' + cedA + '</strong>, para que en mi nombre y representacion proceda a:</p>';
-  doc += '<div style="margin:16px 0;padding:16px;border:1px solid #ddd;border-radius:8px;white-space:pre-line">' + fac + '</div>';
-  doc += '<p>Este poder tendra una vigencia de <strong>' + vig + '</strong> a partir de la fecha de firma.</p>';
-  doc += '<p>Otorgado en San Jose, Costa Rica, ' + fecha + '.</p>';
-  doc += '<div style="display:flex;justify-content:space-around;margin-top:40px"><div style="text-align:center"><p>________________________</p><p>' + ot + '<br>Otorgante</p></div><div style="text-align:center"><p>________________________</p><p>' + ap + '<br>Apoderado</p></div></div>';
+  doc += '<p>Yo, <strong>' + ot + '</strong>, mayor de edad, vecino(a) de la República de Costa Rica, portador(a) de la cédula de identidad número <strong>' + cedO + '</strong>, en pleno goce de mis derechos civiles y actuando en mi propio nombre, por medio de la presente <strong>OTORGO PODER ESPECIAL</strong>, amplio y suficiente en cuanto a derecho corresponda, a favor de:</p>';
+  doc += '<p><strong>' + ap + '</strong>, mayor de edad, portador(a) de la cédula de identidad número <strong>' + cedA + '</strong>, en adelante denominado(a) "EL APODERADO" o "LA APODERADA".</p>';
+  doc += '<h3>PRIMERO: FACULTADES OTORGADAS</h3>';
+  doc += '<p>El presente poder se confiere para que el(la) Apoderado(a), en mi nombre y representación, proceda a realizar los siguientes actos y gestiones:</p>';
+  doc += '<div style="margin:16px 0;padding:16px;border-left:4px solid #0084ff;background:#f8f9fa;border-radius:0 8px 8px 0;white-space:pre-line">' + fac + '</div>';
+  doc += '<h3>SEGUNDO: ALCANCE DEL PODER</h3>';
+  doc += '<p><strong>2.1</strong> El(la) Apoderado(a) queda autorizado(a) para comparecer ante cualquier autoridad pública o privada, instituciones bancarias, entidades gubernamentales, notarías, oficinas registrales, municipalidades y cualquier otra instancia que sea necesaria para el cumplimiento de las facultades aquí conferidas.</p>';
+  doc += '<p><strong>2.2</strong> El(la) Apoderado(a) podrá firmar documentos, formularios, solicitudes, declaraciones y cualesquiera otros instrumentos que sean necesarios para la ejecución del presente poder, siempre dentro de los límites de las facultades expresamente otorgadas.</p>';
+  doc += '<p><strong>2.3</strong> El(la) Apoderado(a) podrá recibir notificaciones, retirar documentos y realizar cualquier trámite accesorio o complementario a las facultades principales aquí conferidas.</p>';
+  doc += '<h3>TERCERO: LIMITACIONES</h3>';
+  doc += '<p><strong>3.1</strong> Este poder se limita estrictamente a las facultades expresamente indicadas en la cláusula primera. El(la) Apoderado(a) no podrá exceder dichas facultades ni realizar actos de disposición sobre bienes del otorgante que no estén expresamente autorizados.</p>';
+  doc += '<p><strong>3.2</strong> Este poder no incluye facultades para: (a) enajenar, gravar ni hipotecar bienes inmuebles; (b) contraer obligaciones crediticias en nombre del otorgante; (c) otorgar poderes a terceros (sustitución), salvo autorización expresa.</p>';
+  doc += '<h3>CUARTO: VIGENCIA</h3>';
+  doc += '<p><strong>4.1</strong> El presente poder tendrá una vigencia de <strong>' + vig + '</strong> contado(a) a partir de la fecha de su otorgamiento.</p>';
+  doc += '<p><strong>4.2</strong> El poder podrá ser revocado en cualquier momento por el otorgante mediante comunicación escrita dirigida al Apoderado(a) y, en su caso, a las instancias ante las cuales se hubiere ejercido, conforme al artículo 1261 del Código Civil.</p>';
+  doc += '<p><strong>4.3</strong> El poder se extinguirá además por: (a) cumplimiento del encargo; (b) vencimiento del plazo; (c) muerte o incapacidad del otorgante o del apoderado(a); (d) renuncia del apoderado(a).</p>';
+  doc += '<h3>QUINTO: RESPONSABILIDAD</h3>';
+  doc += '<p>El(la) Apoderado(a) será responsable de cualquier uso indebido o extralimitación en el ejercicio de las facultades conferidas, pudiendo el otorgante ejercer las acciones legales correspondientes conforme a los artículos 1045 y siguientes del Código Civil.</p>';
+  doc += '<h3>SEXTO: DECLARACIONES</h3>';
+  doc += '<p><strong>6.1</strong> El otorgante declara que actúa de manera libre, voluntaria y sin coacción de ninguna naturaleza.</p>';
+  doc += '<p><strong>6.2</strong> El otorgante declara que no ha otorgado poder alguno sobre las mismas facultades que se confieren en el presente documento, o que si lo hubiere hecho, lo revoca expresamente.</p>';
+  doc += '<p><strong>6.3</strong> El(la) Apoderado(a) declara que acepta el presente poder y se compromete a actuar con diligencia, lealtad y buena fe en el ejercicio de las facultades conferidas.</p>';
+  doc += '<p>Otorgado en la ciudad de San José, República de Costa Rica, a los ' + fecha + '.</p>';
+  doc += '<br><div style="display:flex;justify-content:space-around;margin-top:40px"><div style="text-align:center"><p>________________________</p><p><strong>' + ot + '</strong><br>Cédula: ' + cedO + '<br>Otorgante</p></div><div style="text-align:center"><p>________________________</p><p><strong>' + ap + '</strong><br>Cédula: ' + cedA + '<br>Apoderado(a)</p></div></div>';
+  doc += '<br><div style="display:flex;justify-content:space-around;margin-top:20px"><div style="text-align:center"><p>________________________</p><p>Testigo 1<br>Nombre: _______________<br>Cédula: _______________</p></div><div style="text-align:center"><p>________________________</p><p>Testigo 2<br>Nombre: _______________<br>Cédula: _______________</p></div></div>';
+  doc += '<br><div style="border:2px dashed #999;border-radius:12px;padding:16px;margin-top:20px;background:#fafafa"><h4 style="margin:0 0 8px;color:#666">📋 Espacio para autenticación notarial</h4><p style="color:#888;font-size:12px">El presente poder deberá ser autenticado por un notario público inscrito en la Dirección Nacional de Notariado de Costa Rica, para que surta plenos efectos legales ante terceros. El notario deberá verificar la identidad de las partes, la capacidad legal del otorgante y dar fe de que el acto se realiza conforme a derecho.</p><p style="margin-top:12px">Ante mí, ________________________, Notario(a) Público(a) con oficina en ________________________, protocolicé el presente poder. Doy fe. — Firma y sello del Notario: ________________________</p></div>';
   editor.innerHTML = doc; closeLegal(); showToast('Carta poder generada');
 }
 
@@ -6741,24 +6839,74 @@ function openContratoArrendamiento() {
 function generateArrendamiento() {
   var arr = document.getElementById('lf_arrendador').value||'[ARRENDADOR]';
   var inq = document.getElementById('lf_arrendatario').value||'[ARRENDATARIO]';
-  var dir = document.getElementById('lf_direccionInm').value||'[DIRECCION]';
+  var dir = document.getElementById('lf_direccionInm').value||'[DIRECCIÓN]';
   var monto = parseFloat(document.getElementById('lf_montoRenta').value)||0;
   var dep = document.getElementById('lf_deposito').value;
   var plazo = document.getElementById('lf_plazoArr').value;
   var fecha = new Date().toLocaleDateString('es-CR',{year:'numeric',month:'long',day:'numeric'});
-  var montoStr = monto ? '₡'+monto.toLocaleString('es-CR') : '[MONTO]';
+  var montoStr = monto ? '₡'+monto.toLocaleString('es-CR',{minimumFractionDigits:2}) : '[MONTO]';
+  var depTotal = monto ? '₡'+(monto*parseInt(dep)).toLocaleString('es-CR',{minimumFractionDigits:2}) : '[MONTO]';
   var doc = '<h1 style="text-align:center;color:#1a1a2e">CONTRATO DE ARRENDAMIENTO</h1>';
-  doc += '<p style="text-align:center;color:#888">Conforme a la Ley General de Arrendamientos N° 7527</p><hr>';
-  doc += '<p>En San Jose, ' + fecha + ', entre <strong>' + arr + '</strong> (ARRENDADOR) y <strong>' + inq + '</strong> (ARRENDATARIO).</p>';
-  doc += '<h3>PRIMERA: OBJETO</h3><p>El arrendador da en alquiler al arrendatario el inmueble ubicado en: <strong>' + dir + '</strong></p>';
-  doc += '<h3>SEGUNDA: PLAZO</h3><p>El plazo sera de <strong>' + plazo + ' año(s)</strong> prorrogable automaticamente.</p>';
-  doc += '<h3>TERCERA: RENTA</h3><p>La renta mensual sera de <strong>' + montoStr + '</strong> pagadera los primeros 5 dias de cada mes.</p>';
-  doc += '<h3>CUARTA: DEPOSITO</h3><p>El arrendatario entrega <strong>' + dep + ' mes(es)</strong> de deposito (' + (monto?'₡'+(monto*parseInt(dep)).toLocaleString('es-CR'):'[MONTO]') + ').</p>';
-  doc += '<h3>QUINTA: OBLIGACIONES DEL ARRENDATARIO</h3><p>a) Pagar puntualmente la renta. b) Conservar el inmueble en buen estado. c) No subarrendar sin consentimiento escrito. d) Permitir inspecciones con previo aviso de 24 horas.</p>';
-  doc += '<h3>SEXTA: OBLIGACIONES DEL ARRENDADOR</h3><p>a) Entregar el inmueble en condiciones habitables. b) Realizar reparaciones mayores. c) Respetar la privacidad del arrendatario.</p>';
-  doc += '<h3>SEPTIMA: LEGISLACION</h3><p>Regido por la Ley General de Arrendamientos Urbanos y Suburbanos N° 7527 de Costa Rica.</p>';
-  doc += '<div style="display:flex;justify-content:space-around;margin-top:40px"><div style="text-align:center"><p>________________________</p><p>' + arr + '<br>Arrendador</p></div><div style="text-align:center"><p>________________________</p><p>' + inq + '<br>Arrendatario</p></div></div>';
-  editor.innerHTML = doc; closeLegal(); showToast('Contrato generado');
+  doc += '<p style="text-align:center;color:#888">Conforme a la Ley General de Arrendamientos Urbanos y Suburbanos N° 7527<br>y su Reglamento, Decreto Ejecutivo N° 25391-MP</p><hr style="border:2px solid #1a1a2e">';
+  doc += '<p>En la ciudad de San José, República de Costa Rica, a los ' + fecha + ', comparecen:</p>';
+  doc += '<p><strong>EL ARRENDADOR:</strong> ' + arr + ', mayor de edad, en adelante denominado "EL ARRENDADOR".</p>';
+  doc += '<p><strong>EL ARRENDATARIO:</strong> ' + inq + ', mayor de edad, en adelante denominado "EL ARRENDATARIO".</p>';
+  doc += '<p>Ambas partes, con plena capacidad jurídica para contratar, acuerdan celebrar el presente Contrato de Arrendamiento, conforme a las siguientes cláusulas:</p>';
+  doc += '<h3>CLÁUSULA PRIMERA: OBJETO DEL CONTRATO</h3>';
+  doc += '<p><strong>1.1</strong> El Arrendador da en arrendamiento al Arrendatario, y éste acepta, el bien inmueble ubicado en: <strong>' + dir + '</strong>.</p>';
+  doc += '<p><strong>1.2</strong> El inmueble se entrega en buen estado de conservación y habitabilidad, según consta en el inventario de condiciones que las partes firman como anexo al presente contrato. El Arrendatario declara conocer y aceptar el estado actual del inmueble.</p>';
+  doc += '<p><strong>1.3</strong> El inmueble arrendado será destinado exclusivamente para uso habitacional/comercial (según corresponda). Cualquier cambio de destino requiere la autorización escrita del Arrendador.</p>';
+  doc += '<h3>CLÁUSULA SEGUNDA: PLAZO DEL ARRENDAMIENTO</h3>';
+  doc += '<p><strong>2.1</strong> El plazo del presente arrendamiento será de <strong>' + plazo + ' año(s)</strong>, contado a partir de la fecha de entrega del inmueble.</p>';
+  doc += '<p><strong>2.2</strong> De conformidad con el artículo 70 de la Ley N° 7527, el plazo mínimo del arrendamiento para vivienda es de tres (3) años. Si el plazo pactado fuere menor, se entenderá pactado por el plazo mínimo legal.</p>';
+  doc += '<p><strong>2.3</strong> A la conclusión del plazo, el contrato se prorrogará automáticamente por períodos iguales, salvo que alguna de las partes comunique su intención de no renovar con al menos tres (3) meses de anticipación, conforme al artículo 71 de la Ley N° 7527.</p>';
+  doc += '<h3>CLÁUSULA TERCERA: PRECIO Y FORMA DE PAGO</h3>';
+  doc += '<p><strong>3.1</strong> La renta mensual se fija en la suma de <strong>' + montoStr + '</strong> (colones exactos), pagadera por adelantado dentro de los primeros siete (7) días hábiles de cada mes.</p>';
+  doc += '<p><strong>3.2</strong> El pago se realizará mediante depósito o transferencia bancaria a la cuenta que designe el Arrendador, o en efectivo contra recibo firmado.</p>';
+  doc += '<p><strong>3.3</strong> El atraso en el pago de la renta por más de dos (2) meses consecutivos constituirá causal de desahucio, conforme al artículo 118 inciso a) de la Ley N° 7527.</p>';
+  doc += '<p><strong>3.4</strong> De conformidad con el artículo 67 de la Ley N° 7527, el precio del arrendamiento podrá ser reajustado anualmente en un porcentaje que no exceda la variación del Índice de Precios al Consumidor (IPC) publicado por el Instituto Nacional de Estadística y Censos (INEC), previa notificación escrita con al menos un mes de anticipación.</p>';
+  doc += '<h3>CLÁUSULA CUARTA: DEPÓSITO DE GARANTÍA</h3>';
+  doc += '<p><strong>4.1</strong> El Arrendatario entrega al Arrendador la suma equivalente a <strong>' + dep + ' mes(es)</strong> de renta, por un monto total de <strong>' + depTotal + '</strong>, como depósito de garantía.</p>';
+  doc += '<p><strong>4.2</strong> De conformidad con el artículo 68 de la Ley N° 7527, este depósito no podrá exceder el equivalente a un mes de renta y será devuelto al finalizar el contrato, dentro de los quince (15) días siguientes a la entrega del inmueble, previa verificación de que el mismo se encuentra en las condiciones originales, salvo el desgaste natural por el uso.</p>';
+  doc += '<p><strong>4.3</strong> El Arrendador podrá deducir del depósito las sumas correspondientes a: (a) rentas pendientes de pago; (b) daños al inmueble que excedan el deterioro natural; (c) servicios públicos impagos que estén a cargo del Arrendatario.</p>';
+  doc += '<h3>CLÁUSULA QUINTA: OBLIGACIONES DEL ARRENDATARIO</h3>';
+  doc += '<p>El Arrendatario se obliga a:</p>';
+  doc += '<p><strong>5.1</strong> Pagar puntualmente la renta en los términos y plazos convenidos.</p>';
+  doc += '<p><strong>5.2</strong> Conservar el inmueble en buen estado, realizando las reparaciones menores y de mantenimiento necesarias para su adecuada conservación (artículo 109 de la Ley N° 7527).</p>';
+  doc += '<p><strong>5.3</strong> No realizar modificaciones, ampliaciones ni mejoras sustanciales al inmueble sin la autorización escrita del Arrendador. Las mejoras realizadas con autorización quedarán en beneficio del inmueble al finalizar el contrato, salvo acuerdo expreso en contrario.</p>';
+  doc += '<p><strong>5.4</strong> No subarrendar ni ceder total o parcialmente el inmueble a terceros sin el consentimiento escrito del Arrendador, conforme al artículo 113 de la Ley N° 7527.</p>';
+  doc += '<p><strong>5.5</strong> Pagar oportunamente los servicios públicos (agua, electricidad, telecomunicaciones, internet, recolección de basura) y cualquier otro servicio cuyo disfrute corresponda al Arrendatario.</p>';
+  doc += '<p><strong>5.6</strong> Permitir al Arrendador o a su representante inspeccionar el inmueble, previo aviso con al menos veinticuatro (24) horas de anticipación y en horarios razonables.</p>';
+  doc += '<p><strong>5.7</strong> Devolver el inmueble al finalizar el contrato en las mismas condiciones en que lo recibió, salvo el deterioro natural por el uso normal y razonable.</p>';
+  doc += '<p><strong>5.8</strong> No destinar el inmueble a actividades ilícitas, inmorales, insalubres o que perturben la tranquilidad de los vecinos.</p>';
+  doc += '<p><strong>5.9</strong> Comunicar al Arrendador, dentro de las veinticuatro (24) horas siguientes, cualquier daño o desperfecto grave que sufra el inmueble.</p>';
+  doc += '<h3>CLÁUSULA SEXTA: OBLIGACIONES DEL ARRENDADOR</h3>';
+  doc += '<p>El Arrendador se obliga a:</p>';
+  doc += '<p><strong>6.1</strong> Entregar el inmueble en condiciones de habitabilidad y en buen estado de conservación (artículo 104 de la Ley N° 7527).</p>';
+  doc += '<p><strong>6.2</strong> Mantener al Arrendatario en el goce pacífico del inmueble durante la vigencia del contrato.</p>';
+  doc += '<p><strong>6.3</strong> Realizar las reparaciones mayores y estructurales necesarias para la conservación del inmueble, conforme al artículo 108 de la Ley N° 7527, incluyendo techo, paredes estructurales, cimientos, tuberías principales y sistema eléctrico general.</p>';
+  doc += '<p><strong>6.4</strong> Pagar los impuestos que gravan la propiedad del inmueble (impuesto sobre bienes inmuebles, basura municipal, entre otros).</p>';
+  doc += '<p><strong>6.5</strong> Respetar la privacidad e intimidad del Arrendatario, absteniéndose de ingresar al inmueble sin previo consentimiento, salvo casos de emergencia comprobada.</p>';
+  doc += '<p><strong>6.6</strong> Devolver el depósito de garantía en los términos establecidos en la cláusula cuarta.</p>';
+  doc += '<h3>CLÁUSULA SÉPTIMA: CAUSALES DE TERMINACIÓN ANTICIPADA</h3>';
+  doc += '<p>Serán causales de terminación anticipada del contrato, conforme a los artículos 114 y siguientes de la Ley N° 7527:</p>';
+  doc += '<p><strong>7.1 Por parte del Arrendador (desahucio):</strong> (a) Falta de pago de la renta por más de dos meses; (b) Subarriendo no autorizado; (c) Daño intencional al inmueble; (d) Uso del inmueble para actividades ilícitas; (e) Necesidad del propietario de habitar el inmueble (con al menos tres meses de preaviso y comprobación de la necesidad).</p>';
+  doc += '<p><strong>7.2 Por parte del Arrendatario:</strong> (a) Falta del Arrendador en realizar reparaciones esenciales; (b) Perturbación del goce pacífico del inmueble; (c) Por mutuo acuerdo escrito entre las partes.</p>';
+  doc += '<h3>CLÁUSULA OCTAVA: ENTREGA DEL INMUEBLE</h3>';
+  doc += '<p><strong>8.1</strong> Al vencimiento del contrato o su terminación anticipada, el Arrendatario deberá entregar el inmueble desocupado, libre de personas y bienes, en las mismas condiciones en que lo recibió, salvo el desgaste natural.</p>';
+  doc += '<p><strong>8.2</strong> Se realizará un acta de entrega donde conste el estado del inmueble al momento de la devolución.</p>';
+  doc += '<h3>CLÁUSULA NOVENA: LEGISLACIÓN APLICABLE Y RESOLUCIÓN DE CONTROVERSIAS</h3>';
+  doc += '<p><strong>9.1</strong> El presente contrato se rige por la Ley General de Arrendamientos Urbanos y Suburbanos N° 7527, su Reglamento (Decreto N° 25391-MP), el Código Civil y demás legislación aplicable de la República de Costa Rica.</p>';
+  doc += '<p><strong>9.2</strong> Para cualquier controversia derivada de este contrato, las partes se someten a los tribunales de justicia de la jurisdicción donde se ubica el inmueble.</p>';
+  doc += '<p><strong>9.3</strong> Antes de acudir a la vía judicial, las partes procurarán resolver sus diferencias mediante negociación directa.</p>';
+  doc += '<h3>CLÁUSULA DÉCIMA: DISPOSICIONES FINALES</h3>';
+  doc += '<p><strong>10.1</strong> Cualquier modificación al presente contrato deberá constar por escrito y ser firmada por ambas partes.</p>';
+  doc += '<p><strong>10.2</strong> Las partes señalan los correos electrónicos y números telefónicos indicados anteriormente como medio válido para recibir comunicaciones y notificaciones.</p>';
+  doc += '<p><strong>10.3</strong> Ambas partes declaran que han leído íntegramente el presente contrato, que comprenden su contenido y alcances, y que lo firman de conformidad.</p>';
+  doc += '<p>En fe de lo cual, las partes firman el presente contrato en dos ejemplares de un mismo tenor y a un solo efecto, en la ciudad de San José, Costa Rica, a los ' + fecha + '.</p>';
+  doc += '<br><div style="display:flex;justify-content:space-around;margin-top:40px"><div style="text-align:center"><p>________________________</p><p><strong>' + arr + '</strong><br>Arrendador</p></div><div style="text-align:center"><p>________________________</p><p><strong>' + inq + '</strong><br>Arrendatario</p></div></div>';
+  doc += '<br><div style="display:flex;justify-content:space-around;margin-top:20px"><div style="text-align:center"><p>________________________</p><p>Testigo 1<br>Cédula: _______________</p></div><div style="text-align:center"><p>________________________</p><p>Testigo 2<br>Cédula: _______________</p></div></div>';
+  editor.innerHTML = doc; closeLegal(); showToast('Contrato de arrendamiento generado');
 }
 
 // ── F68: Contrato por horas CR ──────────────────────────────
@@ -6778,17 +6926,54 @@ function generateContratoHoras() {
   var trab = document.getElementById('lf_trabajador').value||'[TRABAJADOR]';
   var tarifa = parseFloat(document.getElementById('lf_tarifaHora').value)||0;
   var horas = document.getElementById('lf_horasSem').value||'20';
-  var desc = document.getElementById('lf_descTrabajo').value||'[DESCRIPCION]';
+  var desc = document.getElementById('lf_descTrabajo').value||'[DESCRIPCIÓN DEL TRABAJO]';
   var fecha = new Date().toLocaleDateString('es-CR',{year:'numeric',month:'long',day:'numeric'});
-  var doc = '<h1 style="text-align:center">CONTRATO DE TRABAJO POR HORAS</h1><hr>';
-  doc += '<p>En San Jose, ' + fecha + '.</p>';
-  doc += '<p><strong>EMPLEADOR:</strong> ' + emp + '</p><p><strong>TRABAJADOR:</strong> ' + trab + '</p>';
-  doc += '<h3>1. OBJETO</h3><p>' + desc + '</p>';
-  doc += '<h3>2. JORNADA</h3><p>Aproximadamente <strong>' + horas + ' horas semanales</strong>, con horario flexible a convenir.</p>';
-  doc += '<h3>3. REMUNERACION</h3><p>Tarifa de <strong>₡' + (tarifa?tarifa.toLocaleString('es-CR'):'[MONTO]') + ' por hora</strong>. Pago quincenal o mensual segun se acuerde.</p>';
-  doc += '<h3>4. VIGENCIA</h3><p>Contrato por tiempo indefinido con preaviso de 15 dias para terminacion.</p>';
-  doc += '<div style="display:flex;justify-content:space-around;margin-top:40px"><div style="text-align:center"><p>________________________</p><p>' + emp + '<br>Empleador</p></div><div style="text-align:center"><p>________________________</p><p>' + trab + '<br>Trabajador</p></div></div>';
-  editor.innerHTML = doc; closeLegal(); showToast('Contrato generado');
+  var tarifaStr = tarifa ? '₡'+tarifa.toLocaleString('es-CR',{minimumFractionDigits:2}) : '[MONTO]';
+  var salSem = tarifa ? '₡'+(tarifa*parseInt(horas)).toLocaleString('es-CR',{minimumFractionDigits:2}) : '[MONTO]';
+  var salMes = tarifa ? '₡'+(tarifa*parseInt(horas)*4.33).toLocaleString('es-CR',{minimumFractionDigits:2}) : '[MONTO]';
+  var doc = '<h1 style="text-align:center;color:#1a1a2e">CONTRATO DE TRABAJO A TIEMPO PARCIAL</h1>';
+  doc += '<p style="text-align:center;color:#888">Conforme al Código de Trabajo de Costa Rica (Ley N° 2) y la Ley de Contratación Laboral a Tiempo Parcial</p><hr style="border:2px solid #1a1a2e">';
+  doc += '<p>En la ciudad de San José, República de Costa Rica, a los ' + fecha + ', comparecen:</p>';
+  doc += '<p><strong>PATRONO:</strong> ' + emp + ', en adelante denominado "EL PATRONO".</p>';
+  doc += '<p><strong>TRABAJADOR(A):</strong> ' + trab + ', en adelante denominado(a) "EL TRABAJADOR".</p>';
+  doc += '<p>Las partes acuerdan celebrar el presente Contrato de Trabajo a Tiempo Parcial, conforme a las siguientes cláusulas:</p>';
+  doc += '<h3>CLÁUSULA PRIMERA: OBJETO Y FUNCIONES</h3>';
+  doc += '<p><strong>1.1</strong> El Trabajador es contratado para desempeñar las siguientes funciones:</p>';
+  doc += '<div style="padding:12px;border:1px solid #ddd;border-radius:8px;margin:8px 0;white-space:pre-line">' + desc + '</div>';
+  doc += '<p><strong>1.2</strong> Las funciones se realizarán en las instalaciones del Patrono o en el lugar que éste designe, según la naturaleza del trabajo.</p>';
+  doc += '<h3>CLÁUSULA SEGUNDA: JORNADA Y HORARIO</h3>';
+  doc += '<p><strong>2.1</strong> La jornada de trabajo será de aproximadamente <strong>' + horas + ' horas semanales</strong>, distribuidas de común acuerdo entre las partes.</p>';
+  doc += '<p><strong>2.2</strong> El horario específico será establecido de mutuo acuerdo y podrá ser modificado conforme a las necesidades del servicio, con previo aviso de al menos una (1) semana.</p>';
+  doc += '<p><strong>2.3</strong> Al tratarse de una jornada parcial, se reconoce que la misma es inferior a la jornada ordinaria establecida en los artículos 135 a 138 del Código de Trabajo.</p>';
+  doc += '<p><strong>2.4</strong> Las horas que excedan la jornada pactada se remunerarán como horas extraordinarias, con un recargo del cincuenta por ciento (50%) sobre la tarifa hora ordinaria, conforme al artículo 139 del Código de Trabajo.</p>';
+  doc += '<h3>CLÁUSULA TERCERA: REMUNERACIÓN</h3>';
+  doc += '<p><strong>3.1</strong> La remuneración se calculará con base en una tarifa de <strong>' + tarifaStr + ' por hora efectiva de trabajo</strong>.</p>';
+  doc += '<p><strong>3.2</strong> El ingreso semanal estimado será de <strong>' + salSem + '</strong> y el mensual estimado de <strong>' + salMes + '</strong>, sujeto a las horas efectivamente laboradas.</p>';
+  doc += '<p><strong>3.3</strong> El pago se realizará de forma quincenal o mensual, según acuerden las partes, mediante depósito bancario o en efectivo contra recibo.</p>';
+  doc += '<p><strong>3.4</strong> Se realizarán las deducciones de ley correspondientes de forma proporcional: seguro social CCSS, y cuando aplique, impuesto sobre la renta.</p>';
+  doc += '<p><strong>3.5</strong> El Patrono se obliga a inscribir al Trabajador ante la CCSS y a realizar los aportes patronales proporcionales a la jornada laborada.</p>';
+  doc += '<h3>CLÁUSULA CUARTA: DERECHOS DEL TRABAJADOR</h3>';
+  doc += '<p>El Trabajador gozará de los siguientes derechos de forma proporcional a la jornada laborada:</p>';
+  doc += '<p><strong>4.1 Vacaciones:</strong> Proporcionales conforme al artículo 153 del Código de Trabajo (dos semanas por cada cincuenta semanas de servicio, calculadas en proporción a las horas trabajadas).</p>';
+  doc += '<p><strong>4.2 Aguinaldo:</strong> Proporcional conforme a la Ley N° 2412, calculado sobre la totalidad de los salarios devengados en el período.</p>';
+  doc += '<p><strong>4.3 Días feriados:</strong> Cuando coincidan con un día de trabajo programado, se remunerarán conforme a los artículos 148 y 149 del Código de Trabajo.</p>';
+  doc += '<p><strong>4.4 Seguro de riesgos:</strong> El Patrono asegurará al Trabajador ante el INS contra riesgos del trabajo.</p>';
+  doc += '<h3>CLÁUSULA QUINTA: OBLIGACIONES DEL TRABAJADOR</h3>';
+  doc += '<p><strong>5.1</strong> Cumplir con la jornada y horario acordados con puntualidad y diligencia.</p>';
+  doc += '<p><strong>5.2</strong> Realizar las funciones asignadas con la calidad y eficiencia requeridas.</p>';
+  doc += '<p><strong>5.3</strong> Guardar confidencialidad sobre la información del Patrono.</p>';
+  doc += '<p><strong>5.4</strong> Comunicar con al menos veinticuatro (24) horas de anticipación cualquier ausencia justificada.</p>';
+  doc += '<p><strong>5.5</strong> Llevar un registro de las horas trabajadas, el cual deberá ser aprobado por el Patrono para efectos del cálculo de la remuneración.</p>';
+  doc += '<h3>CLÁUSULA SEXTA: VIGENCIA Y TERMINACIÓN</h3>';
+  doc += '<p><strong>6.1</strong> El presente contrato es por <strong>tiempo indefinido</strong>.</p>';
+  doc += '<p><strong>6.2</strong> Cualquiera de las partes podrá dar por terminado el contrato con el preaviso correspondiente: una semana (3 a 6 meses de servicio), quince días (6 meses a 1 año), un mes (más de 1 año), conforme al artículo 28 del Código de Trabajo.</p>';
+  doc += '<p><strong>6.3</strong> En caso de despido sin justa causa, el Trabajador tendrá derecho al preaviso, auxilio de cesantía (artículo 29 CT), vacaciones y aguinaldo proporcionales, calculados sobre la base del salario promedio de los últimos seis meses.</p>';
+  doc += '<h3>CLÁUSULA SÉPTIMA: LEGISLACIÓN APLICABLE</h3>';
+  doc += '<p>Este contrato se rige por el Código de Trabajo de Costa Rica, la Constitución Política, y demás legislación laboral aplicable. Las controversias se someterán a los Tribunales de Trabajo competentes.</p>';
+  doc += '<p>Firmado en dos ejemplares, en San José, Costa Rica, a los ' + fecha + '.</p>';
+  doc += '<br><div style="display:flex;justify-content:space-around;margin-top:40px"><div style="text-align:center"><p>________________________</p><p><strong>' + emp + '</strong><br>Patrono</p></div><div style="text-align:center"><p>________________________</p><p><strong>' + trab + '</strong><br>Trabajador(a)</p></div></div>';
+  doc += '<br><div style="display:flex;justify-content:space-around;margin-top:20px"><div style="text-align:center"><p>________________________</p><p>Testigo 1<br>Cédula: _______________</p></div><div style="text-align:center"><p>________________________</p><p>Testigo 2<br>Cédula: _______________</p></div></div>';
+  editor.innerHTML = doc; closeLegal(); showToast('Contrato por horas generado');
 }
 
 // ── F69: Estatutos S.A. CR ──────────────────────────────────
@@ -6810,23 +6995,71 @@ function generateEstatutos() {
   var pres = document.getElementById('lf_presidente').value||'[PRESIDENTE]';
   var sec = document.getElementById('lf_secretario').value||'[SECRETARIO]';
   var tes = document.getElementById('lf_tesorero').value||'[TESORERO]';
-  var obj = document.getElementById('lf_objetoSocial').value||'Comercio en general';
+  var obj = document.getElementById('lf_objetoSocial').value||'Comercio en general, compraventa, importación, exportación, distribución y comercialización de bienes y servicios de toda naturaleza';
   var fecha = new Date().toLocaleDateString('es-CR',{year:'numeric',month:'long',day:'numeric'});
-  var doc = '<h1 style="text-align:center;color:#1a1a2e">ESTATUTOS DE CONSTITUCION</h1>';
-  doc += '<h2 style="text-align:center;color:#666">' + soc + '</h2><hr>';
-  doc += '<p>En San Jose, Costa Rica, ' + fecha + '.</p>';
-  doc += '<h3>ARTICULO 1: DENOMINACION</h3><p>Se constituye la sociedad <strong>' + soc + '</strong></p>';
-  doc += '<h3>ARTICULO 2: DOMICILIO</h3><p>San Jose, Costa Rica, pudiendo establecer sucursales en todo el territorio nacional.</p>';
-  doc += '<h3>ARTICULO 3: OBJETO SOCIAL</h3><p>' + obj + '</p>';
-  doc += '<h3>ARTICULO 4: CAPITAL SOCIAL</h3><p>El capital social es de <strong>₡' + cap.toLocaleString('es-CR') + '</strong> representado por <strong>' + (cap/100) + ' acciones</strong> comunes y nominativas de ₡100 cada una, totalmente suscritas y pagadas.</p>';
-  doc += '<h3>ARTICULO 5: JUNTA DIRECTIVA</h3>';
-  doc += '<p><strong>Presidente:</strong> ' + pres + '</p>';
-  doc += '<p><strong>Secretario:</strong> ' + sec + '</p>';
-  doc += '<p><strong>Tesorero:</strong> ' + tes + '</p>';
-  doc += '<h3>ARTICULO 6: REPRESENTACION</h3><p>La representacion judicial y extrajudicial corresponde al Presidente con facultades de apoderado generalisimo sin limite de suma.</p>';
-  doc += '<h3>ARTICULO 7: FISCAL</h3><p>La asamblea de accionistas nombrara un fiscal por periodos de un año.</p>';
-  doc += '<h3>ARTICULO 8: EJERCICIO FISCAL</h3><p>Del primero de octubre al treinta de setiembre de cada año.</p>';
-  doc += '<br><div style="display:flex;justify-content:space-around;margin-top:30px"><div style="text-align:center"><p>________________________</p><p>' + pres + '<br>Presidente</p></div><div style="text-align:center"><p>________________________</p><p>' + sec + '<br>Secretario</p></div></div>';
+  var numAcciones = Math.floor(cap/100);
+  var doc = '<h1 style="text-align:center;color:#1a1a2e">ACTA CONSTITUTIVA Y ESTATUTOS</h1>';
+  doc += '<h2 style="text-align:center;color:#666">' + soc + '</h2>';
+  doc += '<p style="text-align:center;color:#888">Conforme al Código de Comercio de Costa Rica (Ley N° 3284)<br>y la Ley de Sociedades de Actividades Especiales</p>';
+  doc += '<hr style="border:2px solid #1a1a2e">';
+  doc += '<p>En la ciudad de San José, República de Costa Rica, a los ' + fecha + ', ante la Notaría Pública de ________________________, los suscritos comparecen para constituir una sociedad anónima conforme a los siguientes estatutos:</p>';
+  doc += '<h3 style="text-align:center;margin-top:24px">TÍTULO I — DISPOSICIONES GENERALES</h3>';
+  doc += '<h3>ARTÍCULO 1: DENOMINACIÓN SOCIAL</h3>';
+  doc += '<p>Se constituye una sociedad anónima que se denominará <strong>"' + soc + '"</strong>, pudiendo abreviarse como <strong>"' + soc.replace(' S.A.','').replace(' Sociedad Anónima','') + ' S.A."</strong>, de conformidad con los artículos 102 y siguientes del Código de Comercio.</p>';
+  doc += '<h3>ARTÍCULO 2: DOMICILIO SOCIAL</h3>';
+  doc += '<p>El domicilio social de la compañía será la ciudad de San José, República de Costa Rica. La sociedad podrá establecer agencias, sucursales u oficinas en cualquier lugar del territorio nacional o en el extranjero, por acuerdo de la Junta Directiva.</p>';
+  doc += '<h3>ARTÍCULO 3: DURACIÓN</h3>';
+  doc += '<p>La duración de la sociedad será de noventa y nueve (99) años contados a partir de la fecha de su inscripción en el Registro Nacional, Sección Mercantil, pudiendo prorrogarse por períodos iguales y sucesivos por acuerdo de la Asamblea de Accionistas.</p>';
+  doc += '<h3>ARTÍCULO 4: OBJETO SOCIAL</h3>';
+  doc += '<p>El objeto social de la compañía será: <strong>' + obj + '</strong>, así como la realización de cualquier otra actividad lícita de comercio, industria, agricultura, ganadería, turismo, servicios, inversiones, tenencia de bienes muebles e inmuebles, participación en otras sociedades, y en general cualquier acto o contrato que sea necesario o conveniente para el cumplimiento de sus fines, conforme a la legislación costarricense vigente.</p>';
+  doc += '<h3 style="text-align:center;margin-top:24px">TÍTULO II — CAPITAL SOCIAL Y ACCIONES</h3>';
+  doc += '<h3>ARTÍCULO 5: CAPITAL SOCIAL</h3>';
+  doc += '<p><strong>5.1</strong> El capital social es de <strong>₡' + cap.toLocaleString('es-CR',{minimumFractionDigits:2}) + '</strong> (colones exactos), representado por <strong>' + numAcciones.toLocaleString('es-CR') + ' acciones</strong> comunes y nominativas de <strong>₡100.00</strong> (cien colones) cada una.</p>';
+  doc += '<p><strong>5.2</strong> Las acciones han sido totalmente suscritas y pagadas en este acto por los socios fundadores.</p>';
+  doc += '<p><strong>5.3</strong> El capital social podrá ser aumentado o disminuido por acuerdo de la Asamblea General Extraordinaria de Accionistas, conforme a los artículos 30 y 31 del Código de Comercio.</p>';
+  doc += '<h3>ARTÍCULO 6: ACCIONES Y CERTIFICADOS</h3>';
+  doc += '<p><strong>6.1</strong> Las acciones serán nominativas y se inscribirán en el Libro de Registro de Accionistas que llevará la sociedad (artículo 120 del Código de Comercio).</p>';
+  doc += '<p><strong>6.2</strong> Los certificados de acciones serán firmados por el Presidente y el Secretario de la Junta Directiva e indicarán: la denominación social, el número de acciones, su valor nominal, el nombre del titular y la fecha de emisión.</p>';
+  doc += '<p><strong>6.3</strong> La transmisión de acciones se hará mediante endoso del certificado respectivo e inscripción en el Libro de Registro de Accionistas. Los accionistas tendrán derecho de preferencia para adquirir las acciones que otro accionista desee enajenar.</p>';
+  doc += '<h3 style="text-align:center;margin-top:24px">TÍTULO III — ADMINISTRACIÓN Y GOBIERNO</h3>';
+  doc += '<h3>ARTÍCULO 7: ASAMBLEA DE ACCIONISTAS</h3>';
+  doc += '<p><strong>7.1</strong> La Asamblea General de Accionistas es el órgano supremo de la sociedad. Puede ser ordinaria o extraordinaria (artículos 153 y siguientes del Código de Comercio).</p>';
+  doc += '<p><strong>7.2</strong> La Asamblea Ordinaria se celebrará dentro de los tres (3) meses siguientes al cierre del ejercicio fiscal para conocer: los informes de la Junta Directiva y del Fiscal, aprobar los estados financieros, decretar dividendos y nombrar a los miembros de la Junta Directiva y al Fiscal.</p>';
+  doc += '<p><strong>7.3</strong> La Asamblea Extraordinaria podrá convocarse en cualquier momento para tratar asuntos de su competencia exclusiva: modificación de estatutos, aumento o reducción de capital, fusión, transformación o disolución de la sociedad.</p>';
+  doc += '<p><strong>7.4</strong> El quórum para la Asamblea Ordinaria se formará con la presencia de accionistas que representen más del cincuenta por ciento (50%) del capital social. Para la Asamblea Extraordinaria se requerirá la presencia de accionistas que representen al menos tres cuartas partes (75%) del capital social.</p>';
+  doc += '<p><strong>7.5</strong> Las resoluciones se tomarán por mayoría de votos presentes, salvo los casos en que la ley exija una mayoría calificada.</p>';
+  doc += '<h3>ARTÍCULO 8: JUNTA DIRECTIVA</h3>';
+  doc += '<p><strong>8.1</strong> La administración de la sociedad estará a cargo de una Junta Directiva compuesta por tres (3) miembros: Presidente, Secretario y Tesorero, nombrados por la Asamblea de Accionistas por períodos de ________________________ (indicar el plazo), pudiendo ser reelectos indefinidamente.</p>';
+  doc += '<p><strong>8.2</strong> La primera Junta Directiva queda integrada así:</p>';
+  doc += '<table style="width:100%;border-collapse:collapse;margin:12px 0"><tr style="background:#1a1a2e;color:#fff"><th style="padding:10px;text-align:left">Cargo</th><th style="padding:10px;text-align:left">Nombre</th></tr>';
+  doc += '<tr><td style="padding:8px;border:1px solid #ddd;font-weight:600">Presidente</td><td style="padding:8px;border:1px solid #ddd">' + pres + '</td></tr>';
+  doc += '<tr><td style="padding:8px;border:1px solid #ddd;font-weight:600">Secretario</td><td style="padding:8px;border:1px solid #ddd">' + sec + '</td></tr>';
+  doc += '<tr><td style="padding:8px;border:1px solid #ddd;font-weight:600">Tesorero</td><td style="padding:8px;border:1px solid #ddd">' + tes + '</td></tr></table>';
+  doc += '<p><strong>8.3</strong> La Junta Directiva sesionará válidamente con la presencia de al menos dos (2) de sus miembros y tomará sus resoluciones por mayoría simple.</p>';
+  doc += '<p><strong>8.4</strong> Las vacantes en la Junta Directiva serán llenadas por la Asamblea de Accionistas dentro de los treinta (30) días siguientes a la vacancia.</p>';
+  doc += '<h3>ARTÍCULO 9: REPRESENTACIÓN LEGAL</h3>';
+  doc += '<p><strong>9.1</strong> La representación judicial y extrajudicial de la sociedad corresponde al <strong>Presidente</strong> de la Junta Directiva, con facultades de <strong>apoderado generalísimo sin límite de suma</strong>, conforme al artículo 1253 del Código Civil.</p>';
+  doc += '<p><strong>9.2</strong> El Presidente podrá otorgar poderes generales, generalísimos y especiales, sustituir su poder en todo o en parte, y revocar las sustituciones que hiciere.</p>';
+  doc += '<p><strong>9.3</strong> En ausencia temporal del Presidente, le sustituirá el Secretario con las mismas facultades.</p>';
+  doc += '<h3>ARTÍCULO 10: FISCAL</h3>';
+  doc += '<p><strong>10.1</strong> La vigilancia de la sociedad estará a cargo de un(a) Fiscal, nombrado(a) por la Asamblea de Accionistas por períodos de un (1) año, pudiendo ser reelecto(a).</p>';
+  doc += '<p><strong>10.2</strong> Son atribuciones del Fiscal: fiscalizar la administración de la sociedad, examinar los libros de contabilidad y documentos de la compañía, verificar el estado de caja, presentar informe a la Asamblea sobre los estados financieros, y las demás que señale la ley.</p>';
+  doc += '<h3 style="text-align:center;margin-top:24px">TÍTULO IV — DISPOSICIONES FINANCIERAS</h3>';
+  doc += '<h3>ARTÍCULO 11: EJERCICIO FISCAL</h3>';
+  doc += '<p>El ejercicio fiscal de la sociedad comprenderá del primero (1°) de octubre al treinta (30) de septiembre de cada año. Al cierre de cada ejercicio, la Junta Directiva preparará los estados financieros y el informe de gestión para su presentación a la Asamblea.</p>';
+  doc += '<h3>ARTÍCULO 12: UTILIDADES Y RESERVAS</h3>';
+  doc += '<p><strong>12.1</strong> De las utilidades netas de cada ejercicio se destinará al menos un cinco por ciento (5%) para formar la reserva legal, hasta que ésta alcance el veinte por ciento (20%) del capital social (artículo 143 del Código de Comercio).</p>';
+  doc += '<p><strong>12.2</strong> La distribución de dividendos será acordada por la Asamblea de Accionistas y se pagará en proporción a las acciones de cada socio.</p>';
+  doc += '<h3 style="text-align:center;margin-top:24px">TÍTULO V — DISOLUCIÓN Y LIQUIDACIÓN</h3>';
+  doc += '<h3>ARTÍCULO 13: DISOLUCIÓN</h3>';
+  doc += '<p>La sociedad se disolverá por las causales establecidas en el artículo 201 del Código de Comercio: (a) expiración del plazo; (b) imposibilidad de cumplir el objeto social; (c) pérdida del capital; (d) acuerdo de la Asamblea Extraordinaria; (e) por sentencia judicial firme.</p>';
+  doc += '<h3>ARTÍCULO 14: LIQUIDACIÓN</h3>';
+  doc += '<p>La liquidación se realizará conforme a los artículos 209 y siguientes del Código de Comercio. La Asamblea nombrará uno o más liquidadores quienes tendrán las facultades que la ley les confiere.</p>';
+  doc += '<h3>ARTÍCULO 15: DISPOSICIONES SUPLETORIAS</h3>';
+  doc += '<p>En todo lo no previsto en estos estatutos, se aplicarán las disposiciones del Código de Comercio de Costa Rica (Ley N° 3284), el Código Civil y demás legislación aplicable.</p>';
+  doc += '<p style="margin-top:24px">Leída la presente escritura a los comparecientes, la aprueban y firman en la ciudad de San José, Costa Rica, a los ' + fecha + '.</p>';
+  doc += '<br><div style="display:flex;flex-wrap:wrap;justify-content:space-around;margin-top:30px"><div style="text-align:center;margin:10px"><p>________________________</p><p><strong>' + pres + '</strong><br>Presidente</p></div><div style="text-align:center;margin:10px"><p>________________________</p><p><strong>' + sec + '</strong><br>Secretario</p></div><div style="text-align:center;margin:10px"><p>________________________</p><p><strong>' + tes + '</strong><br>Tesorero</p></div></div>';
+  doc += '<br><div style="border:2px dashed #999;border-radius:12px;padding:16px;margin-top:20px;background:#fafafa"><h4 style="margin:0 0 8px;color:#666">📋 Razón notarial</h4><p style="font-size:13px">Ante mí, ________________________, Notario(a) Público(a), se constituyó la sociedad <strong>' + soc + '</strong>. Doy fe de la identidad, capacidad y libre voluntad de los otorgantes. Se solicita la inscripción ante el Registro Nacional, Sección Mercantil. Es conforme. — Firma y sello: ________________________</p></div>';
   editor.innerHTML = doc; closeLegal(); showToast('Estatutos generados');
 }
 
@@ -6851,18 +7084,69 @@ function generateContratoLaboral() {
   var jornada = document.getElementById('lf_jornada').value;
   var tipo = document.getElementById('lf_tipoContrato').value;
   var fecha = new Date().toLocaleDateString('es-CR',{year:'numeric',month:'long',day:'numeric'});
+  var salStr = sal ? '₡'+sal.toLocaleString('es-CR',{minimumFractionDigits:2}) : '[MONTO]';
+  var salDiario = sal ? '₡'+(sal/30).toLocaleString('es-CR',{minimumFractionDigits:2}) : '[MONTO]';
   var doc = '<h1 style="text-align:center;color:#1a1a2e">CONTRATO INDIVIDUAL DE TRABAJO</h1>';
-  doc += '<p style="text-align:center;color:#888">Conforme al Codigo de Trabajo de Costa Rica</p><hr>';
-  doc += '<p>En San Jose, ' + fecha + '.</p>';
-  doc += '<p><strong>PATRONO:</strong> ' + pat + '</p><p><strong>TRABAJADOR:</strong> ' + trab + '</p>';
-  doc += '<h3>1. PUESTO</h3><p>El trabajador se desempeñara como <strong>' + puesto + '</strong>.</p>';
-  doc += '<h3>2. JORNADA</h3><p>Jornada <strong>' + jornada + '</strong>, de lunes a viernes.</p>';
-  doc += '<h3>3. SALARIO</h3><p>Salario mensual bruto de <strong>₡' + (sal?sal.toLocaleString('es-CR'):'[MONTO]') + '</strong>, pagadero quincenalmente.</p>';
-  doc += '<h3>4. PLAZO</h3><p><strong>' + tipo + '</strong>.</p>';
-  doc += '<h3>5. OBLIGACIONES</h3><p>El trabajador se obliga a: cumplir el horario, seguir instrucciones, guardar confidencialidad, cuidar los activos.</p>';
-  doc += '<h3>6. DERECHOS</h3><p>Conforme al Codigo de Trabajo: vacaciones (2 semanas/año), aguinaldo, dias feriados, seguro social CCSS.</p>';
-  doc += '<h3>7. PERIODO DE PRUEBA</h3><p>Los primeros 3 meses seran considerados periodo de prueba (Art. 28 CT).</p>';
-  doc += '<div style="display:flex;justify-content:space-around;margin-top:40px"><div style="text-align:center"><p>________________________</p><p>' + pat + '<br>Patrono</p></div><div style="text-align:center"><p>________________________</p><p>' + trab + '<br>Trabajador</p></div></div>';
+  doc += '<p style="text-align:center;color:#888">Conforme al Código de Trabajo de Costa Rica, Ley N° 2 del 27 de agosto de 1943 y sus reformas</p><hr style="border:2px solid #1a1a2e">';
+  doc += '<p>En la ciudad de San José, República de Costa Rica, a los ' + fecha + ', comparecen:</p>';
+  doc += '<p><strong>PATRONO:</strong> ' + pat + ', en adelante denominado "EL PATRONO".</p>';
+  doc += '<p><strong>TRABAJADOR(A):</strong> ' + trab + ', en adelante denominado(a) "EL TRABAJADOR".</p>';
+  doc += '<p>Ambas partes, en pleno uso de sus facultades legales, acuerdan celebrar el presente Contrato Individual de Trabajo, conforme a las disposiciones del Código de Trabajo y demás legislación laboral vigente, según las siguientes cláusulas:</p>';
+  doc += '<h3>CLÁUSULA PRIMERA: NATURALEZA Y PUESTO</h3>';
+  doc += '<p><strong>1.1</strong> El Trabajador es contratado para desempeñar el puesto de <strong>' + puesto + '</strong>, debiendo realizar todas las funciones inherentes a dicho cargo, así como aquellas conexas y complementarias que le sean asignadas por el Patrono.</p>';
+  doc += '<p><strong>1.2</strong> El lugar de trabajo será en las instalaciones del Patrono, pudiendo ser reubicado dentro del territorio nacional cuando las necesidades del servicio así lo requieran, conforme al artículo 24 del Código de Trabajo.</p>';
+  doc += '<h3>CLÁUSULA SEGUNDA: TIPO DE CONTRATO Y PLAZO</h3>';
+  doc += '<p><strong>2.1</strong> El presente contrato es por <strong>' + tipo + '</strong>, de conformidad con los artículos 26 y 27 del Código de Trabajo.</p>';
+  doc += '<p><strong>2.2</strong> Los primeros tres (3) meses del contrato se consideran período de prueba, durante el cual cualquiera de las partes puede dar por terminada la relación laboral sin responsabilidad patronal, conforme al artículo 28 del Código de Trabajo.</p>';
+  doc += '<h3>CLÁUSULA TERCERA: JORNADA DE TRABAJO</h3>';
+  doc += '<p><strong>3.1</strong> La jornada ordinaria de trabajo será <strong>' + jornada + '</strong>, de lunes a viernes, conforme a los artículos 135 a 138 del Código de Trabajo.</p>';
+  doc += '<p><strong>3.2</strong> Las jornadas ordinarias máximas establecidas por ley son: jornada diurna (de 5:00 a.m. a 7:00 p.m.) máximo ocho (8) horas diarias y cuarenta y ocho (48) semanales; jornada mixta máximo siete (7) horas diarias y cuarenta y dos (42) semanales; jornada nocturna (de 7:00 p.m. a 5:00 a.m.) máximo seis (6) horas diarias y treinta y seis (36) semanales.</p>';
+  doc += '<p><strong>3.3</strong> Las horas extraordinarias serán remuneradas con un cincuenta por ciento (50%) adicional sobre el salario ordinario, conforme al artículo 139 del Código de Trabajo. La jornada extraordinaria no podrá exceder de cuatro (4) horas diarias.</p>';
+  doc += '<p><strong>3.4</strong> El Trabajador tendrá derecho a un día de descanso semanal remunerado (artículo 152 del Código de Trabajo).</p>';
+  doc += '<h3>CLÁUSULA CUARTA: SALARIO Y FORMA DE PAGO</h3>';
+  doc += '<p><strong>4.1</strong> El Patrono pagará al Trabajador un salario mensual bruto de <strong>' + salStr + '</strong>, equivalente a un salario diario de <strong>' + salDiario + '</strong>.</p>';
+  doc += '<p><strong>4.2</strong> El salario será pagado de forma quincenal (los días 15 y último de cada mes), mediante depósito en la cuenta bancaria designada por el Trabajador o en efectivo contra recibo.</p>';
+  doc += '<p><strong>4.3</strong> Del salario bruto se realizarán las deducciones obligatorias de ley: (a) Seguro Social (CCSS): 10.83% (Seguro de Enfermedad y Maternidad 5.50%, Invalidez, Vejez y Muerte 4.33%, Banco Popular 1.00%); (b) Impuesto sobre la Renta según la tabla vigente del Ministerio de Hacienda — Decreto 45333-H (si aplica); (c) Cualquier otra deducción ordenada por autoridad competente.</p>';
+  doc += '<p><strong>4.4</strong> El Patrono se obliga a inscribir al Trabajador ante la Caja Costarricense de Seguro Social (CCSS) dentro de los ocho (8) días siguientes al inicio de la relación laboral, conforme al artículo 44 de la Ley Constitutiva de la CCSS, y a realizar los aportes patronales correspondientes.</p>';
+  doc += '<h3>CLÁUSULA QUINTA: DERECHOS DEL TRABAJADOR</h3>';
+  doc += '<p>El Trabajador gozará de los siguientes derechos conforme a la legislación laboral costarricense:</p>';
+  doc += '<p><strong>5.1 Vacaciones:</strong> Dos (2) semanas de vacaciones remuneradas por cada cincuenta (50) semanas de servicio continuo, conforme al artículo 153 del Código de Trabajo. Las vacaciones deberán disfrutarse dentro de las quince (15) semanas siguientes al día en que se cumplan las cincuenta (50) semanas.</p>';
+  doc += '<p><strong>5.2 Aguinaldo:</strong> El Trabajador tendrá derecho al pago del aguinaldo (decimotercer mes), equivalente a un doceavo (1/12) de los salarios ordinarios y extraordinarios devengados durante los doce meses anteriores al 1° de diciembre, pagadero dentro de los primeros veinte (20) días de diciembre, conforme a la Ley N° 2412 y sus reformas.</p>';
+  doc += '<p><strong>5.3 Días feriados:</strong> Se reconocerán como días feriados de pago obligatorio los establecidos en el artículo 148 del Código de Trabajo: 1° de enero, 11 de abril, Jueves y Viernes Santos, 1° de mayo, 25 de julio, 15 de agosto, 15 de septiembre y 25 de diciembre. El trabajo en día feriado se remunerará con doble salario (artículo 149 del Código de Trabajo).</p>';
+  doc += '<p><strong>5.4 Licencias:</strong> El Trabajador tendrá derecho a licencia por maternidad (4 meses conforme a la Ley N° 7142), paternidad (2 días), duelo (3 días por fallecimiento de familiar directo), matrimonio (3 días), y las demás establecidas por ley.</p>';
+  doc += '<p><strong>5.5 Seguro de riesgos del trabajo:</strong> El Patrono se obliga a asegurar al Trabajador contra riesgos del trabajo ante el Instituto Nacional de Seguros (INS), conforme al Título IV del Código de Trabajo y la Ley N° 6727.</p>';
+  doc += '<h3>CLÁUSULA SEXTA: OBLIGACIONES DEL TRABAJADOR</h3>';
+  doc += '<p>El Trabajador se obliga a:</p>';
+  doc += '<p><strong>6.1</strong> Cumplir fielmente el horario de trabajo y las labores asignadas con la diligencia, eficiencia y lealtad debidas.</p>';
+  doc += '<p><strong>6.2</strong> Acatar las instrucciones, directrices y políticas internas del Patrono, así como los reglamentos de trabajo vigentes.</p>';
+  doc += '<p><strong>6.3</strong> Guardar estricta confidencialidad sobre la información comercial, técnica, financiera y operativa del Patrono a la que tenga acceso.</p>';
+  doc += '<p><strong>6.4</strong> Cuidar los bienes, herramientas, equipos e instalaciones del Patrono, siendo responsable de los daños que cause por dolo o negligencia.</p>';
+  doc += '<p><strong>6.5</strong> Cumplir con las normas de salud ocupacional y seguridad en el trabajo, y utilizar los equipos de protección proporcionados.</p>';
+  doc += '<p><strong>6.6</strong> No realizar competencia desleal ni trabajar para empresas competidoras del Patrono durante la vigencia de este contrato, sin autorización escrita.</p>';
+  doc += '<p><strong>6.7</strong> Comunicar al Patrono con la mayor brevedad posible cualquier ausencia justificada, aportando los comprobantes correspondientes.</p>';
+  doc += '<h3>CLÁUSULA SÉPTIMA: OBLIGACIONES DEL PATRONO</h3>';
+  doc += '<p>El Patrono se obliga a:</p>';
+  doc += '<p><strong>7.1</strong> Pagar el salario y las prestaciones legales en los plazos y formas convenidos.</p>';
+  doc += '<p><strong>7.2</strong> Proporcionar al Trabajador los materiales, herramientas y condiciones adecuadas para el desempeño de sus funciones.</p>';
+  doc += '<p><strong>7.3</strong> Respetar la dignidad del Trabajador, absteniéndose de cualquier forma de discriminación, acoso laboral o sexual, conforme a la Ley N° 7476 contra el Hostigamiento Sexual y la Ley N° 2694 contra la Discriminación.</p>';
+  doc += '<p><strong>7.4</strong> Mantener al día los aportes a la CCSS, INS, IMAS, INA, Banco Popular y demás cargas sociales de ley.</p>';
+  doc += '<p><strong>7.5</strong> Otorgar al Trabajador los permisos y licencias que le correspondan por ley.</p>';
+  doc += '<h3>CLÁUSULA OCTAVA: CAUSALES DE DESPIDO SIN RESPONSABILIDAD PATRONAL</h3>';
+  doc += '<p>Constituyen causales justas de despido, conforme al artículo 81 del Código de Trabajo:</p>';
+  doc += '<p>(a) Cuando el trabajador se conduzca durante sus labores en forma abiertamente inmoral o injuriosa; (b) Cuando cometa algún delito o falta contra la propiedad en perjuicio del patrono; (c) Cuando cause intencionalmente un daño material; (d) Cuando comprometa con su imprudencia la seguridad del lugar; (e) Cuando revele secretos del patrono; (f) Cuando falte a sus labores sin justificación durante dos días consecutivos o más de dos alternos dentro del mismo mes; (g) Cuando se niegue manifiesta y reiteradamente a adoptar medidas preventivas; (h) Cuando incurra en cualquiera de las demás causales del artículo 81.</p>';
+  doc += '<h3>CLÁUSULA NOVENA: TERMINACIÓN DEL CONTRATO Y PRESTACIONES</h3>';
+  doc += '<p><strong>9.1</strong> En caso de despido sin justa causa, el Patrono deberá pagar al Trabajador:</p>';
+  doc += '<p>(a) <strong>Preaviso:</strong> conforme al artículo 28 del Código de Trabajo — una semana (3 a 6 meses de servicio), quince días (6 meses a 1 año), un mes (más de 1 año).</p>';
+  doc += '<p>(b) <strong>Auxilio de cesantía:</strong> conforme al artículo 29 del Código de Trabajo — 19.5 días de salario por cada año laborado, hasta un máximo de ocho (8) años.</p>';
+  doc += '<p>(c) <strong>Vacaciones proporcionales</strong> no disfrutadas.</p>';
+  doc += '<p>(d) <strong>Aguinaldo proporcional</strong> correspondiente.</p>';
+  doc += '<p>(e) <strong>Salarios</strong> adeudados y cualquier otra suma pendiente.</p>';
+  doc += '<p><strong>9.2</strong> En caso de renuncia voluntaria, el Trabajador deberá dar el preaviso correspondiente y tendrá derecho al pago de vacaciones y aguinaldo proporcionales.</p>';
+  doc += '<h3>CLÁUSULA DÉCIMA: LEGISLACIÓN APLICABLE</h3>';
+  doc += '<p>El presente contrato se rige por el Código de Trabajo de Costa Rica (Ley N° 2 del 27 de agosto de 1943 y sus reformas), la Constitución Política, los Convenios Internacionales de la OIT ratificados por Costa Rica, y demás legislación laboral aplicable. Para cualquier controversia, las partes se someten a los Tribunales de Trabajo de la jurisdicción correspondiente.</p>';
+  doc += '<p>Ambas partes declaran que han leído el presente contrato, que comprenden su contenido y alcances, y que lo firman de conformidad en dos ejemplares de un mismo tenor, en San José, Costa Rica, a los ' + fecha + '.</p>';
+  doc += '<br><div style="display:flex;justify-content:space-around;margin-top:40px"><div style="text-align:center"><p>________________________</p><p><strong>' + pat + '</strong><br>Patrono</p></div><div style="text-align:center"><p>________________________</p><p><strong>' + trab + '</strong><br>Trabajador(a)</p></div></div>';
+  doc += '<br><div style="display:flex;justify-content:space-around;margin-top:20px"><div style="text-align:center"><p>________________________</p><p>Testigo 1<br>Cédula: _______________</p></div><div style="text-align:center"><p>________________________</p><p>Testigo 2<br>Cédula: _______________</p></div></div>';
   editor.innerHTML = doc; closeLegal(); showToast('Contrato laboral generado');
 }
 
@@ -6885,18 +7169,69 @@ function generateDenuncia() {
   var tipo = document.getElementById('lf_tipoViol').value;
   var hechos = document.getElementById('lf_hechos').value||'[HECHOS]';
   var fecha = new Date().toLocaleDateString('es-CR',{year:'numeric',month:'long',day:'numeric'});
-  var doc = '<h1 style="text-align:center;color:#c0392b">DENUNCIA LABORAL</h1>';
-  doc += '<h2 style="text-align:center;color:#666">Ministerio de Trabajo y Seguridad Social</h2><hr>';
-  doc += '<p><strong>Fecha:</strong> ' + fecha + '</p>';
-  doc += '<p><strong>Señores</strong><br>Direccion Nacional de Inspeccion de Trabajo<br>Ministerio de Trabajo y Seguridad Social<br>San Jose, Costa Rica</p>';
-  doc += '<p>Yo, <strong>' + den + '</strong>, respetuosamente presento la siguiente DENUNCIA LABORAL contra:</p>';
-  doc += '<p><strong>Empresa/Patrono:</strong> ' + pat + '</p>';
-  doc += '<p><strong>Ubicacion:</strong> ' + dir + '</p>';
-  doc += '<h3>TIPO DE VIOLACION</h3><p>' + tipo + '</p>';
-  doc += '<h3>HECHOS</h3><div style="white-space:pre-line;padding:12px;border:1px solid #ddd;border-radius:8px">' + hechos + '</div>';
-  doc += '<h3>PETITORIA</h3><p>Solicito a la Inspeccion de Trabajo que realice la investigacion correspondiente y ordene las medidas correctivas conforme a la legislacion laboral vigente.</p>';
-  doc += '<br><div style="text-align:center;margin-top:30px"><p>________________________</p><p>' + den + '<br>Denunciante</p></div>';
-  editor.innerHTML = doc; closeLegal(); showToast('Denuncia generada');
+  var tipoInfo = {
+    'Salario minimo no pagado': {arts:'Artículos 162, 177 y 178 del Código de Trabajo (Ley N° 2). Decreto 45303-MTSS (Salarios mínimos vigentes 2026).', sancion:'Multa de 1 a 23 salarios base conforme al artículo 614 del Código de Trabajo. El patrono deberá pagar las diferencias salariales adeudadas más intereses legales.'},
+    'No pago de horas extra': {arts:'Artículos 135 a 139 del Código de Trabajo. La jornada ordinaria diurna no puede exceder 8 horas diarias ni 48 semanales (art. 136). Las horas extraordinarias se remuneran con un 50% adicional (art. 139).', sancion:'Multa conforme al artículo 614 CT. El patrono deberá pagar las horas extraordinarias adeudadas con el recargo del 50%.'},
+    'Despido injustificado': {arts:'Artículos 28, 29, 63, 81, 82 y 83 del Código de Trabajo. El despido sin justa causa genera derecho a preaviso (art. 28), auxilio de cesantía (art. 29), vacaciones y aguinaldo proporcionales.', sancion:'El trabajador tiene derecho a la liquidación completa: preaviso, cesantía (máximo 8 años), vacaciones proporcionales (art. 153) y aguinaldo proporcional (Ley N° 2412).'},
+    'Acoso laboral': {arts:'Ley N° 7476 contra el Hostigamiento Sexual en el Empleo y la Docencia. Artículos 69 inciso c) y 83 del Código de Trabajo. Ley N° 2694 contra la Discriminación. Convenio 190 de la OIT ratificado por Costa Rica.', sancion:'Multa al patrono por no prevenir el acoso conforme al artículo 614 CT. El trabajador puede dar por terminado el contrato con responsabilidad patronal (art. 83 CT). Posibles sanciones penales según la gravedad.'},
+    'No pago de aguinaldo': {arts:'Ley N° 2412 (Ley de Aguinaldo). El aguinaldo es un derecho irrenunciable equivalente a un doceavo del total de salarios devengados durante el período (1 dic. al 30 nov.), pagadero a más tardar el 20 de diciembre.', sancion:'Multa conforme al artículo 614 CT. Pago inmediato del aguinaldo adeudado más intereses legales.'},
+    'Condiciones insalubres': {arts:'Artículos 282 a 303 del Código de Trabajo (Higiene y Seguridad en el Trabajo). Ley N° 6727 sobre Riesgos del Trabajo. Reglamento General de Seguridad e Higiene del Trabajo (Decreto 1-A).', sancion:'Multa conforme al artículo 614 CT. La Inspección puede ordenar la paralización de actividades hasta que se corrijan las condiciones. El patrono es responsable de accidentes y enfermedades laborales (art. 193 CT).'},
+    'Otro': {arts:'Código de Trabajo de Costa Rica (Ley N° 2), Constitución Política (artículos 56 a 74 — Derechos Sociales), y legislación laboral complementaria aplicable.', sancion:'Según la naturaleza de la infracción, conforme al Título Undécimo del Código de Trabajo (Sanciones, artículos 608 y siguientes).'}
+  };
+  var info = tipoInfo[tipo] || tipoInfo['Otro'];
+  var doc = '<h1 style="text-align:center;color:#c0392b">DENUNCIA POR INFRACCIÓN A LA LEGISLACIÓN LABORAL</h1>';
+  doc += '<h2 style="text-align:center;color:#666">Ministerio de Trabajo y Seguridad Social (MTSS)</h2>';
+  doc += '<p style="text-align:center;color:#888">Dirección Nacional de Inspección de Trabajo<br>Conforme al Código de Trabajo de Costa Rica (Ley N° 2) y la Ley Orgánica del MTSS (Ley N° 1860)</p>';
+  doc += '<hr style="border:2px solid #c0392b">';
+  doc += '<table style="width:100%;border-collapse:collapse;margin:12px 0">';
+  doc += '<tr><td style="padding:8px;border:1px solid #ddd;width:30%;font-weight:600;background:#fff5f5">Fecha de presentación</td><td style="padding:8px;border:1px solid #ddd">' + fecha + '</td></tr>';
+  doc += '<tr><td style="padding:8px;border:1px solid #ddd;font-weight:600;background:#fff5f5">Expediente N°</td><td style="padding:8px;border:1px solid #ddd">________________________ (uso interno MTSS)</td></tr></table>';
+  doc += '<p style="margin-top:16px"><strong>Señores</strong><br>Dirección Nacional de Inspección de Trabajo<br>Ministerio de Trabajo y Seguridad Social<br>San José, Costa Rica<br>Teléfono: 800-872-2256 · Correo: info@mtss.go.cr</p>';
+  doc += '<h3 style="color:#c0392b">I. DATOS DEL DENUNCIANTE</h3>';
+  doc += '<table style="width:100%;border-collapse:collapse;margin:8px 0">';
+  doc += '<tr><td style="padding:6px;border:1px solid #ddd;width:30%;font-weight:600">Nombre completo</td><td style="padding:6px;border:1px solid #ddd">' + den + '</td></tr>';
+  doc += '<tr><td style="padding:6px;border:1px solid #ddd;font-weight:600">Cédula de identidad</td><td style="padding:6px;border:1px solid #ddd">________________________</td></tr>';
+  doc += '<tr><td style="padding:6px;border:1px solid #ddd;font-weight:600">Teléfono de contacto</td><td style="padding:6px;border:1px solid #ddd">________________________</td></tr>';
+  doc += '<tr><td style="padding:6px;border:1px solid #ddd;font-weight:600">Correo electrónico</td><td style="padding:6px;border:1px solid #ddd">________________________</td></tr>';
+  doc += '<tr><td style="padding:6px;border:1px solid #ddd;font-weight:600">Puesto desempeñado</td><td style="padding:6px;border:1px solid #ddd">________________________</td></tr>';
+  doc += '<tr><td style="padding:6px;border:1px solid #ddd;font-weight:600">Fecha de ingreso</td><td style="padding:6px;border:1px solid #ddd">________________________</td></tr>';
+  doc += '<tr><td style="padding:6px;border:1px solid #ddd;font-weight:600">Salario mensual</td><td style="padding:6px;border:1px solid #ddd">₡________________________</td></tr></table>';
+  doc += '<h3 style="color:#c0392b">II. DATOS DEL DENUNCIADO (PATRONO)</h3>';
+  doc += '<table style="width:100%;border-collapse:collapse;margin:8px 0">';
+  doc += '<tr><td style="padding:6px;border:1px solid #ddd;width:30%;font-weight:600">Empresa / Patrono</td><td style="padding:6px;border:1px solid #ddd">' + pat + '</td></tr>';
+  doc += '<tr><td style="padding:6px;border:1px solid #ddd;font-weight:600">Cédula jurídica/física</td><td style="padding:6px;border:1px solid #ddd">________________________</td></tr>';
+  doc += '<tr><td style="padding:6px;border:1px solid #ddd;font-weight:600">Dirección del centro de trabajo</td><td style="padding:6px;border:1px solid #ddd">' + dir + '</td></tr>';
+  doc += '<tr><td style="padding:6px;border:1px solid #ddd;font-weight:600">Nombre del representante legal</td><td style="padding:6px;border:1px solid #ddd">________________________</td></tr>';
+  doc += '<tr><td style="padding:6px;border:1px solid #ddd;font-weight:600">Teléfono de la empresa</td><td style="padding:6px;border:1px solid #ddd">________________________</td></tr>';
+  doc += '<tr><td style="padding:6px;border:1px solid #ddd;font-weight:600">N° aprox. de trabajadores</td><td style="padding:6px;border:1px solid #ddd">________________________</td></tr></table>';
+  doc += '<h3 style="color:#c0392b">III. TIPO DE INFRACCIÓN DENUNCIADA</h3>';
+  doc += '<div style="padding:12px;background:#fff5f5;border-radius:8px;border-left:4px solid #c0392b;margin:8px 0"><strong>' + tipo + '</strong></div>';
+  doc += '<h3 style="color:#c0392b">IV. FUNDAMENTO LEGAL</h3>';
+  doc += '<div style="padding:12px;border:1px solid #ddd;border-radius:8px;margin:8px 0;font-size:13px"><p style="margin:0 0 8px"><strong>Normas infringidas:</strong></p><p style="margin:0">' + info.arts + '</p></div>';
+  doc += '<h3 style="color:#c0392b">V. RELACIÓN DE HECHOS</h3>';
+  doc += '<p style="font-size:13px;color:#666;margin-bottom:4px"><em>Describa de forma cronológica y detallada los hechos que motivan la denuncia:</em></p>';
+  doc += '<div style="white-space:pre-line;padding:12px;border:1px solid #ddd;border-radius:8px;margin:8px 0;min-height:80px">' + hechos + '</div>';
+  doc += '<h3 style="color:#c0392b">VI. PRUEBAS QUE SE APORTAN</h3>';
+  doc += '<p>El denunciante aporta o se compromete a aportar la siguiente prueba documental:</p>';
+  doc += '<div style="padding:12px;border:1px solid #ddd;border-radius:8px;margin:8px 0;color:#999"><em>☐ Contrato de trabajo<br>☐ Comprobantes de pago / colillas de salario<br>☐ Comunicaciones (correos, mensajes, cartas)<br>☐ Fotografías o evidencia audiovisual<br>☐ Certificaciones de la CCSS<br>☐ Declaración de testigos<br>☐ Otra: ________________________</em></div>';
+  doc += '<h3 style="color:#c0392b">VII. PETITORIA</h3>';
+  doc += '<p>Con fundamento en los artículos 92 y siguientes de la Ley Orgánica del Ministerio de Trabajo y Seguridad Social (Ley N° 1860), y los artículos 608 y siguientes del Código de Trabajo, respetuosamente <strong>SOLICITO</strong>:</p>';
+  doc += '<p><strong>1.</strong> Que se ordene una inspección al centro de trabajo del denunciado para verificar los hechos denunciados.</p>';
+  doc += '<p><strong>2.</strong> Que se prevenga al patrono para que cese de inmediato la infracción y corrija las irregularidades detectadas.</p>';
+  doc += '<p><strong>3.</strong> Que se impongan las sanciones correspondientes conforme a la ley:</p>';
+  doc += '<div style="padding:10px;border-left:4px solid #c0392b;margin:8px 0;background:#fafafa;font-size:13px">' + info.sancion + '</div>';
+  doc += '<p><strong>4.</strong> Que se ordene al patrono el pago de las sumas adeudadas al trabajador, según corresponda.</p>';
+  doc += '<p><strong>5.</strong> Que se certifique lo actuado para los efectos judiciales que procedan.</p>';
+  doc += '<h3 style="color:#c0392b">VIII. NOTIFICACIONES</h3>';
+  doc += '<p>Señalo para recibir notificaciones:</p>';
+  doc += '<p>Dirección física: ________________________</p>';
+  doc += '<p>Correo electrónico: ________________________</p>';
+  doc += '<p>Teléfono: ________________________</p>';
+  doc += '<p style="margin-top:16px">Presento la anterior denuncia bajo la fe de juramento conforme al artículo 318 del Código Penal, que sanciona con prisión de 3 meses a 2 años a quien formule denuncia falsa ante autoridad competente.</p>';
+  doc += '<p>Firmada en la ciudad de San José, Costa Rica, a los ' + fecha + '.</p>';
+  doc += '<br><div style="text-align:center;margin-top:30px"><p>________________________</p><p><strong>' + den + '</strong><br>Denunciante<br>Cédula: ________________________</p></div>';
+  doc += '<br><div style="border:2px dashed #999;border-radius:12px;padding:16px;margin-top:16px;background:#fafafa"><h4 style="margin:0 0 8px;color:#666">📋 Uso interno MTSS</h4><p style="font-size:12px;margin:0">Recibido por: ________________________ · Fecha: ____________ · Hora: ____________<br>Oficina regional: ________________________ · Inspector asignado: ________________________</p></div>';
+  editor.innerHTML = doc; closeLegal(); showToast('Denuncia laboral generada');
 }
 
 // ── F72: Constancia salarial ────────────────────────────────
@@ -7035,7 +7370,7 @@ function openD101() {
   var h = '<div class="wc-legal-form">';
   h += '<label>Contribuyente:</label><input type="text" id="lf_contD101">';
   h += '<label>Cedula juridica/fisica:</label><input type="text" id="lf_cedD101">';
-  h += '<label>Periodo fiscal:</label><select id="lf_periodoD101"><option>Oct 2023 - Sep 2024</option><option>Oct 2024 - Sep 2025</option></select>';
+  h += '<label>Periodo fiscal:</label><select id="lf_periodoD101"><option>Oct 2025 - Sep 2026</option><option>Oct 2026 - Sep 2027</option></select>';
   h += '<label>Ingresos brutos (colones):</label><input type="number" id="lf_ingresosD101">';
   h += '<label>Gastos deducibles (colones):</label><input type="number" id="lf_gastosD101">';
   h += '<button onclick="generateD101()">Calcular y generar</button>';
@@ -7049,14 +7384,14 @@ function generateD101() {
   var ingresos = parseFloat(document.getElementById('lf_ingresosD101').value)||0;
   var gastos = parseFloat(document.getElementById('lf_gastosD101').value)||0;
   var renta = Math.max(0, ingresos - gastos);
-  // Tarifas 2024 simplificadas
+  // Tarifas renta persona jurídica 2026 (Ley 9635 - Ley de Fortalecimiento de las Finanzas Públicas)
   var impuesto = 0;
   if(renta > 0) {
-    if(renta <= 3956000*12) impuesto = 0;
-    else if(renta <= 5898000*12) impuesto = (renta - 3956000*12) * 0.10;
-    else if(renta <= 9837000*12) impuesto = (5898000*12 - 3956000*12)*0.10 + (renta - 5898000*12)*0.15;
-    else if(renta <= 19707000*12) impuesto = (5898000*12 - 3956000*12)*0.10 + (9837000*12 - 5898000*12)*0.15 + (renta - 9837000*12)*0.20;
-    else impuesto = (5898000*12 - 3956000*12)*0.10 + (9837000*12 - 5898000*12)*0.15 + (19707000*12 - 9837000*12)*0.20 + (renta - 19707000*12)*0.25;
+    if(renta <= 5361000*12) impuesto = renta * 0.05;
+    else if(renta <= 8042000*12) impuesto = 5361000*12*0.05 + (renta - 5361000*12)*0.10;
+    else if(renta <= 10722000*12) impuesto = 5361000*12*0.05 + (8042000*12-5361000*12)*0.10 + (renta - 8042000*12)*0.15;
+    else if(renta <= 53611000*12) impuesto = 5361000*12*0.05 + (8042000*12-5361000*12)*0.10 + (10722000*12-8042000*12)*0.15 + (renta - 10722000*12)*0.20;
+    else impuesto = 5361000*12*0.05 + (8042000*12-5361000*12)*0.10 + (10722000*12-8042000*12)*0.15 + (53611000*12-10722000*12)*0.20 + (renta - 53611000*12)*0.25;
   }
   var f = function(n){return '₡'+n.toLocaleString('es-CR',{minimumFractionDigits:2})};
   var doc = '<h1 style="text-align:center;color:#1a1a2e">DECLARACION DEL IMPUESTO SOBRE LA RENTA</h1>';
@@ -7128,13 +7463,13 @@ function openCalcRenta() {
 function calcRenta() {
   var sal = parseFloat(document.getElementById('lf_salRenta').value);
   if(!sal) { showToast('Ingresa el salario'); return; }
-  // Tramos 2024
+  // Tramos 2026 (Decreto 45333-H)
   var imp = 0;
-  if(sal <= 941000) imp = 0;
-  else if(sal <= 1381000) imp = (sal - 941000) * 0.10;
-  else if(sal <= 2423000) imp = (1381000-941000)*0.10 + (sal-1381000)*0.15;
-  else if(sal <= 4845000) imp = (1381000-941000)*0.10 + (2423000-1381000)*0.15 + (sal-2423000)*0.20;
-  else imp = (1381000-941000)*0.10 + (2423000-1381000)*0.15 + (4845000-2423000)*0.20 + (sal-4845000)*0.25;
+  if(sal <= 918000) imp = 0;
+  else if(sal <= 1347000) imp = (sal - 918000) * 0.10;
+  else if(sal <= 2364000) imp = (1347000-918000)*0.10 + (sal-1347000)*0.15;
+  else if(sal <= 4727000) imp = (1347000-918000)*0.10 + (2364000-1347000)*0.15 + (sal-2364000)*0.20;
+  else imp = (1347000-918000)*0.10 + (2364000-1347000)*0.15 + (4727000-2364000)*0.20 + (sal-4727000)*0.25;
   var neto = sal - imp;
   window._rentaData = {sal:sal,imp:imp,neto:neto};
   var f = function(n){return '₡'+n.toLocaleString('es-CR',{minimumFractionDigits:2})};
@@ -7195,17 +7530,16 @@ function filterCorreos() {
 // ── F80: Salarios mínimos CR ────────────────────────────────
 function openSalariosMinimos() {
   var salarios = [
-    {cat:'Trabajador no calificado', monto:361861},
-    {cat:'Trabajador semicalificado', monto:389906},
-    {cat:'Trabajador calificado', monto:409791},
-    {cat:'Tecnico medio', monto:435155},
-    {cat:'Trabajador especializado', monto:462070},
-    {cat:'Tecnico educacion superior', monto:504491},
-    {cat:'Diplomado universitario', monto:534483},
-    {cat:'Bachiller universitario', monto:601297},
-    {cat:'Licenciado universitario', monto:720709},
-    {cat:'Servicio domestico', monto:228747},
-    {cat:'Trabajador agricola', monto:14118, nota:'/dia'}
+    {cat:'Trabajador no calificado (TONC)', monto:373092},
+    {cat:'Trabajador semicalificado (TOSC)', monto:405711},
+    {cat:'Trabajador calificado (TOC)', monto:419756},
+    {cat:'Tecnico medio Ed. Diversificada', monto:496838},
+    {cat:'Trabajador especializado genérico', monto:487335},
+    {cat:'Tecnico educacion superior', monto:542097},
+    {cat:'Diplomado universitario', monto:585485},
+    {cat:'Bachiller universitario', monto:664078},
+    {cat:'Licenciado universitario', monto:796921},
+    {cat:'Servicio domestico', monto:268731}
   ];
   var h = '<div style="max-height:50vh;overflow-y:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">';
   h += '<tr style="background:#1a1a2e;color:#fff"><th style="padding:8px;text-align:left">Categoria</th><th style="padding:8px;text-align:right">Minimo</th><th style="padding:8px">Insertar</th></tr>';
@@ -7215,20 +7549,20 @@ function openSalariosMinimos() {
     h += '<td style="padding:6px;border-bottom:1px solid #eee;text-align:center"><button onclick="editor.focus();document.execCommand(\'insertText\',false,\'₡' + s.monto.toLocaleString('es-CR') + '\');closeLegal();showToast(\'Insertado\')" style="background:#0084ff;color:#fff;border:none;border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer">+</button></td></tr>';
   });
   h += '</table>';
-  h += '<p style="font-size:11px;color:#999;margin-top:8px">* Segundo semestre 2024 (Decreto 44305-MTSS). Consulte actualizaciones en mtss.go.cr</p>';
+  h += '<p style="font-size:11px;color:#999;margin-top:8px">* Vigente I Semestre 2026 (Decreto 45303-MTSS). Consulte actualizaciones en mtss.go.cr</p>';
   h += '<button onclick="insertSalariosTabla()" style="width:100%;margin-top:8px;background:#27ae60;color:#fff;border:none;border-radius:8px;padding:8px;font-size:13px;cursor:pointer">Insertar tabla completa</button>';
   h += '</div>';
-  showLegal('Salarios Minimos CR 2024', h);
+  showLegal('Salarios Mínimos CR 2026', h);
 }
 function insertSalariosTabla() {
-  var t = '<h3>TABLA DE SALARIOS MINIMOS - COSTA RICA 2024</h3>';
+  var t = '<h3>TABLA DE SALARIOS MÍNIMOS - COSTA RICA 2026</h3>';
   t += '<table style="border-collapse:collapse;width:100%;font-size:13px">';
-  t += '<tr style="background:#1a1a2e;color:#fff"><th style="padding:8px;text-align:left">Categoria</th><th style="padding:8px;text-align:right">Salario minimo</th></tr>';
-  var datos = [['No calificado','₡361,861'],['Semicalificado','₡389,906'],['Calificado','₡409,791'],['Tecnico medio','₡435,155'],['Especializado','₡462,070'],['Tecnico superior','₡504,491'],['Diplomado','₡534,483'],['Bachiller univ.','₡601,297'],['Licenciado','₡720,709']];
+  t += '<tr style="background:#1a1a2e;color:#fff"><th style="padding:8px;text-align:left">Categoría</th><th style="padding:8px;text-align:right">Salario mínimo</th></tr>';
+  var datos = [['No calificado (TONC)','₡373,092'],['Semicalificado (TOSC)','₡405,711'],['Calificado (TOC)','₡419,756'],['Técnico medio','₡496,838'],['Especializado genérico','₡487,335'],['Técnico Ed. Superior','₡542,097'],['Diplomado universitario','₡585,485'],['Bachiller universitario','₡664,078'],['Licenciado universitario','₡796,921']];
   datos.forEach(function(d) {
     t += '<tr><td style="padding:6px;border:1px solid #ddd">' + d[0] + '</td><td style="padding:6px;border:1px solid #ddd;text-align:right;font-weight:600">' + d[1] + '/mes</td></tr>';
   });
-  t += '</table><p style="font-size:10px;color:#999">Fuente: MTSS, II Semestre 2024</p>';
+  t += '</table><p style="font-size:10px;color:#999">Fuente: MTSS, Decreto 45303-MTSS · I Semestre 2026</p>';
   editor.focus(); document.execCommand('insertHTML',false,t); closeLegal(); showToast('Tabla insertada');
 }
 
@@ -7296,7 +7630,7 @@ function openReciboSalarial() {
   h += '<label>Trabajador:</label><input type="text" id="lf_rsTrabajador">';
   h += '<label>Cedula:</label><input type="text" id="lf_rsCedula">';
   h += '<label>Salario bruto (colones):</label><input type="number" id="lf_rsSalario">';
-  h += '<label>Periodo:</label><input type="text" id="lf_rsPeriodo" placeholder="Ej: 1-15 Oct 2024">';
+  h += '<label>Periodo:</label><input type="text" id="lf_rsPeriodo" placeholder="Ej: 1-15 Oct 2026">';
   h += '<button onclick="generateRecibo()">Generar recibo</button>';
   h += '</div>';
   showLegal('Recibo de Salario', h);
@@ -7307,10 +7641,12 @@ function generateRecibo() {
   var ced = document.getElementById('lf_rsCedula').value||'[CEDULA]';
   var sal = parseFloat(document.getElementById('lf_rsSalario').value)||0;
   var per = document.getElementById('lf_rsPeriodo').value||'[PERIODO]';
-  var ccssObrero = sal * 0.1067;
+  var ccssObrero = sal * 0.1083;
   var renta = 0;
-  if(sal > 941000) renta = (Math.min(sal,1381000)-941000)*0.10;
-  if(sal > 1381000) renta += (Math.min(sal,2423000)-1381000)*0.15;
+  if(sal > 918000) renta = (Math.min(sal,1347000)-918000)*0.10;
+  if(sal > 1347000) renta += (Math.min(sal,2364000)-1347000)*0.15;
+  if(sal > 2364000) renta += (Math.min(sal,4727000)-2364000)*0.20;
+  if(sal > 4727000) renta += (sal-4727000)*0.25;
   var deducciones = ccssObrero + renta;
   var neto = sal - deducciones;
   var f = function(n){return '₡'+n.toLocaleString('es-CR',{minimumFractionDigits:2})};
@@ -7322,7 +7658,7 @@ function generateRecibo() {
   doc += '<tr style="background:#e8f4ff"><td colspan="2" style="padding:6px;font-weight:600">INGRESOS</td></tr>';
   doc += '<tr><td style="padding:4px 6px;border-bottom:1px solid #eee">Salario ordinario</td><td style="padding:4px 6px;border-bottom:1px solid #eee;text-align:right">' + f(sal) + '</td></tr>';
   doc += '<tr style="background:#fff5f5"><td colspan="2" style="padding:6px;font-weight:600">DEDUCCIONES</td></tr>';
-  doc += '<tr><td style="padding:4px 6px;border-bottom:1px solid #eee">CCSS obrero (10.67%)</td><td style="padding:4px 6px;border-bottom:1px solid #eee;text-align:right">-' + f(ccssObrero) + '</td></tr>';
+  doc += '<tr><td style="padding:4px 6px;border-bottom:1px solid #eee">CCSS obrero (10.83%)</td><td style="padding:4px 6px;border-bottom:1px solid #eee;text-align:right">-' + f(ccssObrero) + '</td></tr>';
   doc += '<tr><td style="padding:4px 6px;border-bottom:1px solid #eee">Impuesto renta</td><td style="padding:4px 6px;border-bottom:1px solid #eee;text-align:right">-' + f(renta) + '</td></tr>';
   doc += '<tr style="background:#1a1a2e;color:#fff"><td style="padding:8px;font-weight:700">NETO A PAGAR</td><td style="padding:8px;text-align:right;font-weight:700;font-size:16px">' + f(neto) + '</td></tr>';
   doc += '</table></div>';
@@ -7403,15 +7739,15 @@ function generatePlanillaCCSS() {
     var parts = l.split(',');
     var nombre = parts[0]||'[N]';
     var sal = parseFloat(parts[1])||0;
-    var obrero = sal * 0.1067; // SEM+IVM+LPT
-    var patrono = sal * 0.2633; // SEM+IVM+Asig+IMAS+INA+FODESAF+BPC+INS
+    var obrero = sal * 0.1083; // SEM 5.50% + IVM 4.33% + Bco Popular 1.00%
+    var patrono = sal * 0.2683; // SEM+IVM+FCL+OPC+FODESAF+IMAS+INA+BPC
     totalSal += sal; totalObrero += obrero; totalPatrono += patrono;
     return {nombre:nombre,sal:sal,obrero:obrero,patrono:patrono};
   });
   var doc = '<h1 style="text-align:center;color:#1a1a2e">PLANILLA CCSS</h1>';
   doc += '<p style="text-align:center"><strong>' + emp + '</strong> · Ced: ' + ced + '</p><hr>';
   doc += '<table style="width:100%;border-collapse:collapse;font-size:12px">';
-  doc += '<tr style="background:#1a1a2e;color:#fff"><th style="padding:6px">Empleado</th><th style="padding:6px;text-align:right">Salario</th><th style="padding:6px;text-align:right">Obrero (10.67%)</th><th style="padding:6px;text-align:right">Patrono (26.33%)</th></tr>';
+  doc += '<tr style="background:#1a1a2e;color:#fff"><th style="padding:6px">Empleado</th><th style="padding:6px;text-align:right">Salario</th><th style="padding:6px;text-align:right">Obrero (10.83%)</th><th style="padding:6px;text-align:right">Patrono (26.83%)</th></tr>';
   rows.forEach(function(r) {
     doc += '<tr><td style="padding:4px 6px;border:1px solid #ddd">' + r.nombre + '</td><td style="padding:4px 6px;border:1px solid #ddd;text-align:right">' + f(r.sal) + '</td><td style="padding:4px 6px;border:1px solid #ddd;text-align:right">' + f(r.obrero) + '</td><td style="padding:4px 6px;border:1px solid #ddd;text-align:right">' + f(r.patrono) + '</td></tr>';
   });
@@ -7434,12 +7770,14 @@ function calcCCSS() {
   if(!sal) { showToast('Ingresa el salario'); return; }
   var items = [
     {concepto:'SEM (Enfermedad y Maternidad)', obrero:5.50, patrono:9.25},
-    {concepto:'IVM (Invalidez, Vejez y Muerte)', obrero:4.17, patrono:5.08},
-    {concepto:'LPT (Ley Proteccion Trabajador)', obrero:1.00, patrono:4.50},
-    {concepto:'Asignaciones Familiares', obrero:0, patrono:5.00},
+    {concepto:'IVM (Invalidez, Vejez y Muerte)', obrero:4.33, patrono:5.58},
+    {concepto:'Banco Popular (obrero)', obrero:1.00, patrono:0.25},
+    {concepto:'FCL (Fondo Capitalización Laboral)', obrero:0, patrono:1.50},
+    {concepto:'OPC (Pensión Complementaria)', obrero:0, patrono:2.00},
+    {concepto:'FODESAF', obrero:0, patrono:5.00},
     {concepto:'IMAS', obrero:0, patrono:0.50},
     {concepto:'INA', obrero:0, patrono:1.50},
-    {concepto:'Banco Popular', obrero:0, patrono:0.50}
+    {concepto:'LPT Banco Popular (patrono)', obrero:0, patrono:0.25}
   ];
   var f = function(n){return '₡'+n.toLocaleString('es-CR',{minimumFractionDigits:2})};
   var totalOb = 0, totalPat = 0;
@@ -7450,7 +7788,8 @@ function calcCCSS() {
     totalOb += ob; totalPat += pat;
     h += '<tr><td style="padding:4px;border-bottom:1px solid #eee">' + i.concepto + '</td><td style="padding:4px;border-bottom:1px solid #eee;text-align:center">' + i.obrero + '%</td><td style="padding:4px;border-bottom:1px solid #eee;text-align:right">' + f(ob) + '</td><td style="padding:4px;border-bottom:1px solid #eee;text-align:center">' + i.patrono + '%</td><td style="padding:4px;border-bottom:1px solid #eee;text-align:right">' + f(pat) + '</td></tr>';
   });
-  h += '<tr style="font-weight:700;background:#e8f4ff"><td style="padding:6px">TOTALES</td><td style="padding:6px;text-align:center">10.67%</td><td style="padding:6px;text-align:right">' + f(totalOb) + '</td><td style="padding:6px;text-align:center">26.33%</td><td style="padding:6px;text-align:right">' + f(totalPat) + '</td></tr></table>';
+  h += '<tr style="font-weight:700;background:#e8f4ff"><td style="padding:6px">TOTALES</td><td style="padding:6px;text-align:center">10.83%</td><td style="padding:6px;text-align:right">' + f(totalOb) + '</td><td style="padding:6px;text-align:center">25.83%</td><td style="padding:6px;text-align:right">' + f(totalPat) + '</td></tr></table>';
+  h += '<div style="margin-top:4px;font-size:11px;color:#888">* No incluye prima INS (riesgos del trabajo), variable según actividad. Fuente: CCSS 2026.</div>';
   h += '<div style="margin-top:8px;font-size:13px"><strong>Salario neto (aprox):</strong> ' + f(sal - totalOb) + '</div>';
   var r = document.getElementById('ccssResult'); r.style.display='block'; r.innerHTML = h;
 }
@@ -13899,7 +14238,7 @@ function calcLiquidation(){const salario=parseFloat(document.getElementById("__l
     </div>
 
     <div style="font-size:10px;color:#888;line-height:1.6;margin-bottom:10px">
-      * Deducci\xF3n CCSS trabajador (~10.67%): ${fmt(ccssDeduccion)}<br>
+      * Deducci\xF3n CCSS trabajador (~10.83%): ${fmt(ccssDeduccion)}<br>
       * Esta calculadora es referencial. Consult\xE1 con un abogado laboral para casos espec\xEDficos.
     </div>
 
@@ -16397,14 +16736,14 @@ function openCCSSPlanilla(){const old=document.getElementById("__ccssPanel");old
   <div style="background:#fff;border-radius:20px;max-width:560px;width:100%;max-height:94vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)">
     <div style="background:linear-gradient(135deg,#27ae60,#1e8449);color:#fff;padding:16px 20px;border-radius:20px 20px 0 0;flex-shrink:0">
       <div style="font-size:16px;font-weight:700">\u{1F3E5} Planilla CCSS</div>
-      <div style="font-size:11px;opacity:.8;margin-top:2px">Caja Costarricense de Seguro Social \xB7 Cargas sociales 2025</div>
+      <div style="font-size:11px;opacity:.8;margin-top:2px">Caja Costarricense de Seguro Social \xB7 Cargas sociales 2026</div>
     </div>
 
     <div style="flex:1;overflow-y:auto;padding:16px 20px">
       <div style="background:#f0fff4;border-radius:10px;padding:12px;margin-bottom:14px;font-size:11px;color:#155724;line-height:1.7">
-        <strong>Cargas sociales 2025:</strong><br>
+        <strong>Cargas sociales 2026:</strong><br>
         Patrono: 26.83% (SEM 9.25% + IVM 4.92% + Riesgos 1% + ASFA 0.5% + FODESAF 0.5% + IMAS 0.5% + INA 1.5% + Bco Popular 0.5% + Asignaciones 5.33% + LPT 3.33%)<br>
-        Trabajador: 10.67% (SEM 5.5% + IVM 4.17% + Bco Popular 1%)
+        Trabajador: 10.83% (SEM 5.50% + IVM 4.33% + Bco Popular 1.00%)
       </div>
 
       <div style="margin-bottom:12px">
@@ -18658,11 +18997,11 @@ function lawFilter(query){const q=query.toLowerCase(),area=window.__lawArea||"To
 function insertCCSS(){const d=window.__ccssData;if(!d||!d.rows.length){showToast("Calcul\xE1 primero la planilla");return}const empresa=document.getElementById("__ccssEmpresa")?.value.trim()||"Empresa",fmt=n=>"\u20A1"+Math.round(n).toLocaleString("es-CR"),fecha=new Date().toLocaleDateString("es-CR",{month:"long",year:"numeric"}),html=`<div style="font-family:Calibri,Arial,sans-serif;max-width:600px;margin:12px auto;border:2px solid #27ae60;border-radius:10px;overflow:hidden">
     <div style="background:#27ae60;color:#fff;padding:10px 16px;font-weight:700">\u{1F3E5} Planilla CCSS \u2014 ${empresa} \xB7 ${fecha}</div>
     <table style="border-collapse:collapse;width:100%;font-size:10pt">
-      <tr style="background:#f0fff4"><th style="padding:7px 10px;border:1px solid #ddd;text-align:left">Empleado</th><th style="padding:7px 10px;border:1px solid #ddd">Salario</th><th style="padding:7px 10px;border:1px solid #ddd">Patronal 26.83%</th><th style="padding:7px 10px;border:1px solid #ddd">Trabajador 10.67%</th><th style="padding:7px 10px;border:1px solid #ddd">Costo total</th></tr>
+      <tr style="background:#f0fff4"><th style="padding:7px 10px;border:1px solid #ddd;text-align:left">Empleado</th><th style="padding:7px 10px;border:1px solid #ddd">Salario</th><th style="padding:7px 10px;border:1px solid #ddd">Patronal 26.83%</th><th style="padding:7px 10px;border:1px solid #ddd">Trabajador 10.83%</th><th style="padding:7px 10px;border:1px solid #ddd">Costo total</th></tr>
       ${d.rows.map((r,i)=>`<tr style="${i%2?"background:#fafafa":""}"><td style="padding:6px 10px;border:1px solid #ddd">${r.nombre}</td><td style="padding:6px 10px;border:1px solid #ddd;text-align:right">${fmt(r.salario)}</td><td style="padding:6px 10px;border:1px solid #ddd;text-align:right;color:#003da5">${fmt(r.patron)}</td><td style="padding:6px 10px;border:1px solid #ddd;text-align:right;color:#e74c3c">${fmt(r.trabaj)}</td><td style="padding:6px 10px;border:1px solid #ddd;text-align:right;font-weight:600">${fmt(r.total)}</td></tr>`).join("")}
       <tr style="background:#27ae60;color:#fff"><td style="padding:7px 10px;font-weight:700">TOTALES</td><td style="padding:7px 10px;text-align:right;font-weight:700">${fmt(d.totalSalarios)}</td><td style="padding:7px 10px;text-align:right;font-weight:700">${fmt(d.totalPatron)}</td><td style="padding:7px 10px;text-align:right;font-weight:700">${fmt(d.totalTrabaj)}</td><td style="padding:7px 10px;text-align:right;font-weight:700">${fmt(d.totalCosto)}</td></tr>
     </table>
-    <div style="padding:8px 16px;font-size:8pt;color:#aaa;text-align:center">Planilla generada con WC Corporate Editor \xB7 Tarifas CCSS 2025</div>
+    <div style="padding:8px 16px;font-size:8pt;color:#aaa;text-align:center">Planilla generada con WC Corporate Editor \xB7 Tarifas CCSS 2026</div>
   </div>`;typeof insertHTML=="function"&&insertHTML(html),document.getElementById("__ccssPanel").remove(),showToast("\u{1F3E5} Planilla CCSS insertada \u2705")}
 
 function openLanguagePanel(){const old=document.getElementById("__i18nPanel");old&&old.remove();const ov=document.createElement("div");ov.id="__i18nPanel",ov.style.cssText="position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px";const langs=[{code:"es",name:"Espa\xF1ol",flag:"\u{1F1E8}\u{1F1F7}",native:"Espa\xF1ol (Costa Rica)"},{code:"en",name:"English",flag:"\u{1F1EC}\u{1F1E7}",native:"English"},{code:"fr",name:"Fran\xE7ais",flag:"\u{1F1EB}\u{1F1F7}",native:"Fran\xE7ais"},{code:"pt",name:"Portugu\xEAs",flag:"\u{1F1E7}\u{1F1F7}",native:"Portugu\xEAs"}];ov.innerHTML=`
@@ -19981,7 +20320,7 @@ function d101Calc(){const ingVentas=d101G("__d101IngVentas"),ingOtros=d101G("__d
           </div>`).join("")}
       </div>
       <div style="margin-top:10px;font-size:10px;color:#888;line-height:1.6">
-        Tarifas ISR 2024: 0% hasta \u20A15.6M \xB7 10% hasta \u20A18.4M \xB7 15% hasta \u20A111.2M \xB7 20% hasta \u20A116.8M \xB7 25% resto
+        Tarifas ISR 2026 (Ley 9635): 5% hasta \u20A15.4M \xB7 10% hasta \u20A18.0M \xB7 15% hasta \u20A110.7M \xB7 20% hasta \u20A153.6M \xB7 25% resto
       </div>
     </div>`)}
 
@@ -20619,7 +20958,7 @@ function openStylesPanel(){showToast("openStylesPanel: función en mantenimiento
 function openSynonymsPanel(){showToast("openSynonymsPanel: función en mantenimiento")}
 function openTabsMode(){WC_TABS.bar?(document.getElementById("__wcTabsBar")?.remove(),WC_TABS.bar=null,showToast("Modo multidocumento desactivado")):(WC_TABS.init(),showToast("\u{1F4D1} Modo multidocumento activado"))}
 
-function openThemePanel(){showToast("openThemePanel: función en mantenimiento")}
+function openThemePanel(){openThemes()}
 function openVoiceAI(){WC_VOICE_AI.start()}
 
 function openZenMode(){WC_ZEN.open()}
@@ -21283,6 +21622,135 @@ function ytInsert(){const url=document.getElementById("__ytUrl").value.trim(),id
 function ytPreview(url){const id=ytExtractId(url),box=document.getElementById("__ytPreviewBox");if(box){if(!id){box.innerHTML='<div style="color:#555;font-size:13px;text-align:center"><div style="font-size:40px;margin-bottom:8px">\u25B6\uFE0F</div>Peg\xE1 el link del video</div>';return}box.innerHTML=`<img src="https://img.youtube.com/vi/${id}/hqdefault.jpg" style="width:100%;display:block" onerror="this.style.display='none'">`}}
 
 
+// ── Draggable Floating Buttons ──────────────────────────────
+function initDraggableButtons() {
+  var ids = ['fabBtn', 'communityBtn', 'styleBtn', '__themeBtn'];
+  ids.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) makeDraggable(el);
+  });
+}
+
+function makeDraggable(el) {
+  var startX = 0, startY = 0, startLeft = 0, startTop = 0;
+  var isDragging = false, hasMoved = false;
+  var DRAG_THRESHOLD = 8;
+
+  // Load saved position
+  var saved = null;
+  try { saved = JSON.parse(localStorage.getItem('wc_pos_' + el.id)); } catch(e){}
+  if (saved) {
+    el.style.left = saved.left + 'px';
+    el.style.top = saved.top + 'px';
+    el.style.right = 'auto';
+    el.style.bottom = 'auto';
+  }
+
+  el.style.touchAction = 'none';
+
+  el.addEventListener('touchstart', function(e) {
+    if (e.touches.length !== 1) return;
+    var t = e.touches[0];
+    var rect = el.getBoundingClientRect();
+    startX = t.clientX;
+    startY = t.clientY;
+    startLeft = rect.left;
+    startTop = rect.top;
+    isDragging = true;
+    hasMoved = false;
+  }, {passive: true});
+
+  el.addEventListener('touchmove', function(e) {
+    if (!isDragging) return;
+    var t = e.touches[0];
+    var dx = t.clientX - startX;
+    var dy = t.clientY - startY;
+    if (!hasMoved && Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return;
+    hasMoved = true;
+    e.preventDefault();
+    var newLeft = startLeft + dx;
+    var newTop = startTop + dy;
+    // Keep within viewport
+    var w = el.offsetWidth, h = el.offsetHeight;
+    newLeft = Math.max(0, Math.min(window.innerWidth - w, newLeft));
+    newTop = Math.max(0, Math.min(window.innerHeight - h, newTop));
+    el.style.left = newLeft + 'px';
+    el.style.top = newTop + 'px';
+    el.style.right = 'auto';
+    el.style.bottom = 'auto';
+    el.style.transition = 'none';
+  }, {passive: false});
+
+  el.addEventListener('touchend', function(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    if (hasMoved) {
+      // Save position
+      try {
+        localStorage.setItem('wc_pos_' + el.id, JSON.stringify({
+          left: parseInt(el.style.left),
+          top: parseInt(el.style.top)
+        }));
+      } catch(e){}
+      el.style.transition = '';
+      // Prevent click/onclick from firing after drag
+      e.preventDefault();
+      var blocked = true;
+      var blocker = function(ev) {
+        if (blocked) { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); }
+      };
+      el.addEventListener('click', blocker, {capture: true, once: true});
+      setTimeout(function() { blocked = false; }, 300);
+    }
+  });
+
+  // Mouse drag for testing in browser
+  el.addEventListener('mousedown', function(e) {
+    if (e.button !== 0) return;
+    var rect = el.getBoundingClientRect();
+    startX = e.clientX;
+    startY = e.clientY;
+    startLeft = rect.left;
+    startTop = rect.top;
+    isDragging = true;
+    hasMoved = false;
+
+    function onMove(ev) {
+      var dx = ev.clientX - startX;
+      var dy = ev.clientY - startY;
+      if (!hasMoved && Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return;
+      hasMoved = true;
+      ev.preventDefault();
+      var newLeft = startLeft + dx;
+      var newTop = startTop + dy;
+      var w = el.offsetWidth, h = el.offsetHeight;
+      newLeft = Math.max(0, Math.min(window.innerWidth - w, newLeft));
+      newTop = Math.max(0, Math.min(window.innerHeight - h, newTop));
+      el.style.left = newLeft + 'px';
+      el.style.top = newTop + 'px';
+      el.style.right = 'auto';
+      el.style.bottom = 'auto';
+      el.style.transition = 'none';
+    }
+    function onUp() {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      isDragging = false;
+      if (hasMoved) {
+        try {
+          localStorage.setItem('wc_pos_' + el.id, JSON.stringify({
+            left: parseInt(el.style.left),
+            top: parseInt(el.style.top)
+          }));
+        } catch(e){}
+        el.style.transition = '';
+      }
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+
 // ── Print ───────────────────────────────────────────────────
 function printDoc() {
   window.print();
@@ -21333,8 +21801,27 @@ function autoSave() {
 function autoLoad() {
   try {
     var saved = localStorage.getItem(autoSaveKey);
-    if(saved && saved.length > 10) editor.innerHTML = saved;
+    if(saved && saved.length > 10) { editor.innerHTML = saved; return; }
   } catch(e) {}
+  // Si no hay contenido guardado, abrir como Word (documento en blanco con estructura)
+  newWordDoc(true);
+}
+function newWordDoc(silent) {
+  var fecha = new Date().toLocaleDateString('es-CR',{year:'numeric',month:'long',day:'numeric'});
+  var html = '<p><br></p><p><br></p><p><br></p>';
+  html += '<p><br></p><p><br></p><p><br></p>';
+  html += '<p><br></p><p><br></p>';
+  editor.innerHTML = html;
+  updateCounts();
+  // Posicionar cursor al inicio (primera línea)
+  setTimeout(function(){
+    editor.focus();
+    var sel = window.getSelection();
+    var range = document.createRange();
+    var firstP = editor.querySelector('p');
+    if(firstP) { range.setStart(firstP, 0); range.collapse(true); sel.removeAllRanges(); sel.addRange(range); }
+  }, 100);
+  if(!silent) showToast('📄 Nuevo documento');
 }
 editor.addEventListener('input', function() {
   clearTimeout(window.__autoSaveTimer);
@@ -21456,6 +21943,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Focus editor
   setTimeout(function() { editor.focus(); }, 300);
+
+  // Add theme button
+  addThemeButton();
+
+  // Make floating buttons draggable
+  initDraggableButtons();
 
   // Close panels when clicking outside
   document.addEventListener('click', function(e) {
