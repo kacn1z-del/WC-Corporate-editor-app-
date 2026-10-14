@@ -1,10 +1,10 @@
 {
   "expo": {
     "name": "WC Corporate",
-    "slug": "wccorporateeditor",
+    "slug": "wc-corporate-editor-",
     "version": "1.0.0",
     "orientation": "portrait",
-    "owner": "mechedes123s-team",
+    "owner": "guiscerdas",
     "icon": "./assets/icon.png",
     "splash": {
       "image": "./assets/splash.png",
@@ -25,7 +25,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "712fb18d-3f4b-4d04-b52b-be53dec59139"
+        "projectId": "2086008c-9f3d-4f8d-9eae-d83f616aafda"
       }
     }
   }
